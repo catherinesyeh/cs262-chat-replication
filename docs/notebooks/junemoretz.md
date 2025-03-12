@@ -1,30 +1,34 @@
 # June Moretz Engineering Notebook
 
-## February 19, 2025
+## March 12, 2025
 
-One thought I've already had: the previous model of sending messages over the socket immediately will no longer be possible since RPC is request/response. My suggestion is that we use a polling approach like the other teams, and just run the standard retrieve messages call every few seconds.
+I haven't started yet, but some loosely structured notes around how we might go about building this:
 
-I'm going to start writing up a gRPC definition as a translation of our previous protocols tonight, and hopefully figure out how to integrate that into the Java server later!
+log-replay replication
+split intermachine and client-server protocols! use separate ports and separate RPC servers
+must fix ID assignment post-deletion!
+storage - just use the log! you can determine ID assignment from this since deletions are also logged. the log system does mean nothing is truly deleted - privacy - but whatever
 
-Update - started writing the new server to make sure I know what I'm doing while writing the gRPC definitions. Looks like ultimately it'll involve the following:
+client requirements:
 
-- Replacing all the custom request/response types with gRPC generated code (for simplicity)
-- Moving the logic from AppThread into the rewritten App, which will contain the gRPC server
-- Removing the Protocol files entirely
-- Rewriting a number of tests
+- one request at a time
+- failover
+- maybe live-update list of available servers?
+- a view of connected servers or a way to manipulate this for demo purposes would be nice
 
-Another realization: gRPC is stateless, sockets aren't. Easiest way to work around this is probably just to implement a simple session system where clients get a random string as a session key and have to attach it to future requests.
+server requirements:
 
-Todos:
+- relay-or-fail before returning from a request
+- track other servers' availability to manage relaying
 
-- Build session handling into the database and rip out unneeded bits (done!)
-- Make login/create session-aware (done!)
-- Build a session lookup utility for the rest (and make the operation handler responsible for using it, to keep other operation implementations similar) (done!)
-- Make the existing operation handler test validate this (done!)
-- Write a proper server-side test that includes the gRPC server and the session system (done!)
+make some sort of virtualized relay-agent channel abstraction to maintain ordering invariants (actually we probably just need to synchronize the entire log-replay-relay system? correctness > speed. this guarantees FIFO)
 
-### Update
+if a server receives a relay request from a machine it thinks is dead it must reject it - you need to resync with me!
 
-I believe the server is now 100% done! That wasn't too bad. Using gRPC has its advantages - generated code means the amount of code actually written by me in the server is only around 500 lines total now, and it's a lot more fluent to work with (and to be sure of the protocol layer's correctness) than the custom protocols. It does have its disadvantages (particularly around being stateless, which forced me to implement a session system). We _could_ have used gRPC streams to have messages delivered instantly, but this seemed like it would be more difficult than it's worth on the client end (and would be no less complex than the previous approach on the server side), so we're opting for polling instead.
+spinup synchronization: contact one server, sync with it + obtain network state info, THEN sync with the others - you have new cutoff values so the syncs should be minimal/zero!
 
-We haven't yet tested the difference in bytes sent between gRPC and our custom wire protocol. We'll do this once Catherine has the client reimplementation done - this should let us use (roughly) the same test suite as before, for a direct comparison!
+some way to use CLI args to run multiple different servers on the same machine
+
+two people trying to register with the same name at almost the same time is undefined behavior. this could break things - but all other conflicts should be fine
+
+ultimately, server/client specs should be written up in high-level, readable docs that explain the failure and replication model and how everything is handled!
