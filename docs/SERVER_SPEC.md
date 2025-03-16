@@ -8,17 +8,19 @@ The client can obtain the bcrypt settings needed for login by making an account 
 
 ## Session keys
 
-Logging in or creating an account returns a string session key. This must be sent in all future requests to identify a user's session.
+Logging in or creating an account returns a string session key. This must be sent in all future requests to identify a user's session. Session keys are JWTs, allowing them to be used across replicas.
 
 ## Request/Response System
 
 No streaming responses exist. The recipient should receive exactly one response per gRPC call.
 
+## IDs
+
+All entities (accounts and messages) are assigned a unique string ID. This ID is in the format `[originating replica ID]-[ascending ID]`. The ascending ID component will always be assigned in ascending order by the originating replica. IDs will never be reused. This ensures that IDs are unique no matter which replica receives a send message or create account request from a user.
+
 ## Pagination
 
-All entities (accounts and messages) are assigned a unique integer ID, which will always be assigned in ascending order. Entities are always returned to the client ordered by ID. The highest ID received by the client in one request can then be used as the "offset ID" in the next request - the server will then return only entities with a greater ID.
-
-Pagination is currently only used for listing accounts, as messages are implicitly paginated by their delivered status, as noted below.
+Entities are returned in order of creation timestamp (oldest first), as assigned by its originating replica. A creation timestamp can then be used as an offset timestamp in an account listing request - the server will then return only entities with a more recent timestamp. Pagination is currently only used for listing accounts, as messages are implicitly paginated by their delivered status, as noted below.
 
 ## Maximum Lengths
 
@@ -32,15 +34,17 @@ You cannot send a message to yourself.
 
 Only the delivery of new/unread messages is supported by the protocol, but all messages are stored. Once a message has been delivered, it is marked as read and will not be redelivered.
 
-When a message is sent to a currently logged in user, it will be automatically delivered. Automatic message deliveries will only be sent to the most recently logged in socket per user, if a user has multiple open sockets.
-
 ## Account Deletion
 
 Deletion of an account marks the account as deleted. The username will remain claimed in the database. The user's hashed password will be deleted, as will all messages received by that user, including unread messages. Messages sent by the user will remain sent.
 
-## Persistence
+## Persistence and Log-Replay
 
-There is currently no persistence support. A server crash will lose all accounts and messages, as they are stored only in memory.
+todo
+
+## Replication
+
+todo
 
 ## Internals
 

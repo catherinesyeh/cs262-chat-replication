@@ -1,18 +1,22 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 package edu.harvard;
 
 option java_package = "edu.harvard";
 
 message Account {
-  int32 id = 1;
+  string id = 1;
   string username = 2;
+  google.protobuf.Timestamp created_at = 3;
 }
 
 message ChatMessage {
-  int32 id = 1;
+  string id = 1;
   string sender = 2;
   string message = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
 message AccountLookupRequest {
@@ -38,7 +42,7 @@ message LoginCreateResponse {
 message ListAccountsRequest {
   string session_key = 1;
   uint32 maximum_number = 2;
-  uint32 offset_account_id = 3;
+  google.protobuf.Timestamp offset_timestamp = 3;
   string filter_text = 4;
 }
 
@@ -53,7 +57,7 @@ message SendMessageRequest {
 }
 
 message SendMessageResponse {
-  int32 id = 1;
+  string id = 1;
 }
 
 message RequestMessagesRequest {
@@ -67,7 +71,7 @@ message RequestMessagesResponse {
 
 message DeleteMessagesRequest {
   string session_key = 1;
-  repeated int32 id = 2;
+  repeated string id = 2;
 }
 
 message DeleteAccountRequest {

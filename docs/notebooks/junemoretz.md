@@ -7,7 +7,7 @@ I haven't started yet, but some loosely structured notes around how we might go 
 log-replay replication
 split intermachine and client-server protocols! use separate ports and separate RPC servers
 must fix ID assignment post-deletion!
-storage - just use the log! you can determine ID assignment from this since deletions are also logged. the log system does mean nothing is truly deleted - privacy - but whatever
+storage - just use the log! you can determine ID assignment from this since deletions are also logged. the log system does mean nothing is truly deleted - privacy - but this is fine (could be garbage collected in theory!)
 
 client requirements:
 
@@ -29,6 +29,20 @@ spinup synchronization: contact one server, sync with it + obtain network state 
 
 some way to use CLI args to run multiple different servers on the same machine
 
-two people trying to register with the same name at almost the same time is undefined behavior. this could break things - but all other conflicts should be fine
+two people trying to register with the same name at almost the same time is undefined behavior. this could break things - but all other conflicts should be fine. this uniqueness constraint is the largest problem here - solving it in a strictly consistent manner without using a primary-backup system would essentially require transactional semantics, but it'll be glossed over in this implementation.
 
 ultimately, server/client specs should be written up in high-level, readable docs that explain the failure and replication model and how everything is handled!
+
+## March 16, 2025
+
+Getting started today! First priority is going to be writing some proper documentation and the proto files. This should set out clear implementation guidelines that I can follow while moving forward! After that, I'm going to work on configuration, the log-replay system, and data storage in a single-replica configuration and try to get everything working reliably before introducing actual replication support. There's a lot that will need to be changed in the existing code to support the replication model I'm considering.
+
+Todos:
+
+- Rewrite ID system
+- Rewrite server configuration system
+- Add timestamp generation/storage and redo pagination to use timestamps
+- Rebuild session keys as JWTs
+- Write log-replay system for all database-relevant actions
+- Build persistence for log-replay system
+- Replication!
