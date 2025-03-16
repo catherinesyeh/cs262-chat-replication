@@ -40,11 +40,33 @@ Deletion of an account marks the account as deleted. The username will remain cl
 
 ## Persistence and Log-Replay
 
-todo
+The server will use a system we term Log-Replay for handling persistence and replication. The Log-Replay system works as follows:
+
+Every request that modifies the database (creating an account, sending a message, reading messages, deleting messages, and deleting an account) is associated with a _log message_. When a request is sent to a server, it can be sent to any online server - the server receiving the message is termed the _originating replica_. When handling a request, the originating replica generates a log message, which is associated with the originating replica's ID, a timestamp generated from the local clock, and the details needed to apply the operation to the database.
+
+Once a log message has been generated, it is dispatched to the log-replay system. The log-replay system stores the log message on disk and applies its contents to the database.
+
+When a server first spins up, if it has a database file specified in its configuration, it will read log messages from the database file and replay them through the log-replay system in order to bring its in-memory database up to date.
 
 ## Replication
 
-todo
+The replication protocol also uses the log-replay system to establish a consistent set of log messages on all machines, and thus a consistent database.
+
+### Originating replicas
+
+When an originating replica receives a request, it will generate a log message. Once that log message has been saved and replied locally, it will be dispatched to all other servers in the network. (Each replica is aware of all other active replicas, as described below.) The request is complete once the log message has either been delivered to all servers or failed.
+
+### Non-originating replicas
+
+All replicas maintain a separate gRPC server, at a separate port, for communicating inter-replica log messages. Non-originating replicas can be sent a log message on their inter-replica gRPC server by originating replicas, and will then save that log message locally and apply it to their database, as if it was generated internally. This allows a consistent datastore to be established between replicas. This datastore is not necessarily strongly consistent, but since originating replicas do not return from a request until a log message has been synchronized to all available servers, any available server should be in a consistent state once the request returns. (Servers for which synchronization failed may be temporarily inconsistent; see below.) The one opportunity for failure is usernames in registration, where it is possible for a conflict to arise between usernames since they must be unique. The protocol does not currently enforce transactional semantics for creating accounts, and thus in rare circumstances an account creation that returns successfully could lead to a state inconsistent from what the client may have expected.
+
+### Spin-up
+
+New replicas can be added to the network dynamically. When a replica spins up, it may or may not already have an associated datastore. If it has an associated datastore, it will begin by replaying it, as discussed above. At this point, it will attempt to connect to the entry point set in its configuration file in order to connect to the network. When connecting to the entry point, it will send its own inter-replica gRPC IP address and port, as well as the latest timestamp for log messages it has received for every originating replica ID. The entry point will then send back the network state (all other replicas that it believes are currently online) and all log messages newer than the cutoffs sent by the connecting replica. Since timestamps are tracked individually for each originating replica ID, time synchronization is not necessary so long as timestamps monotonically increase for each originating replica. The new replica will then synchronize with every other entry point on the network in a similar manner.
+
+### Tracking Network State
+
+Each replica tracks the identity of every other replica so it knows where to relay messages. The spin-up process described above is used to synchronize entering replicas with each other, which enters them into the network state map of every replica they introduce themselves to. A failure to relay a log message leads to a replica being removed from the network map by the originating replica. If that replica then attempts to relay a message to the replica that removed it from its network map, it will be instructed to re-synchronize before being allowed to relay a message. This ensures that replicas can drop in and out of the network and will still end up in a consistent state.
 
 ## Internals
 
