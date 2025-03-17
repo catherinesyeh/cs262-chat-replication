@@ -1,5 +1,6 @@
-package edu.harvard.Logic;
+package edu.harvard.logic;
 
+import static com.google.protobuf.util.Timestamps.toMillis;
 import static java.lang.System.currentTimeMillis;
 
 import java.util.ArrayList;
@@ -7,8 +8,6 @@ import java.util.Collection;
 import java.util.List;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
-import edu.harvard.Data.Data.Account;
-import edu.harvard.Data.Data.Message;
 import edu.harvard.Chat;
 import edu.harvard.Chat.AccountLookupResponse;
 import edu.harvard.Chat.LoginCreateRequest;
@@ -18,6 +17,8 @@ import edu.harvard.Chat.ListAccountsRequest;
 import edu.harvard.Chat.ListAccountsResponse;
 import edu.harvard.Chat.ChatMessage;
 import edu.harvard.Chat.SendMessageRequest;
+import edu.harvard.data.Data.Account;
+import edu.harvard.data.Data.Message;
 
 /*
  * Higher-level logic for all operations.
@@ -99,7 +100,7 @@ public class OperationHandler {
     Collection<Account> allAccounts = db.getAllAccounts();
     for (Account account : allAccounts) {
       boolean include = true;
-      if (account.timestamp <= request.getOffsetTimestamp().getNanos() / 1000) {
+      if (account.timestamp <= toMillis(request.getOffsetTimestamp())) {
         include = false;
       }
       if (!account.username.contains(request.getFilterText())) {
@@ -130,7 +131,7 @@ public class OperationHandler {
     if (account == null) {
       throw new HandleException("Recipient does not exist!");
     }
-    if (account.id == sender_id) {
+    if (account.id.equals(sender_id)) {
       throw new HandleException("You cannot message yourself!");
     }
     // Build Message
@@ -165,7 +166,7 @@ public class OperationHandler {
   public boolean deleteMessages(String user_id, List<String> ids) {
     for (String i : ids) {
       Message m = db.getMessage(i);
-      if (m.recipient_id != user_id && m.sender_id != user_id) {
+      if (!m.recipient_id.equals(user_id) && !m.sender_id.equals(user_id)) {
         return false;
       }
       db.deleteMessage(i);

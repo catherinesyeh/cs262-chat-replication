@@ -1,15 +1,17 @@
-package edu.harvard.Logic;
+package edu.harvard.logic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import edu.harvard.Data.Data.Account;
-import edu.harvard.Data.Data.Message;
+import edu.harvard.data.Data.Account;
+import edu.harvard.data.Data.Message;
 
 /*
  * Properly-synchronized in-memory datastore.
@@ -63,7 +65,8 @@ public class Database {
   }
 
   public synchronized Collection<Account> getAllAccounts() {
-    return accountMap.values();
+    return accountMap.values().stream().sorted(Comparator.comparing(account -> account.timestamp))
+        .collect(Collectors.toList());
   }
 
   /*

@@ -1,4 +1,4 @@
-package edu.harvard.Logic;
+package edu.harvard.logic;
 
 /*
  * Log-replay system. Handles all mutating actions.

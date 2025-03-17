@@ -48,3 +48,9 @@ Todos:
 - Replication!
 
 Username validation will need to be moved elsewhere - I'm updating the database class to make it usable by the log-replay system. Same with marking messages as read. (update: both of these are done, and are tested in OperationHandlerTest)
+
+## March 17, 2025
+
+I've had some weird issues with tests not running in some cases that I've been unable to figure out, but it does seem I can at least trigger the skipped ones if I specify them? Absolutely no idea what's going on here though. Really weird. I've looked into it and found nothing useful - some of them are just randomly skipped sometimes.
+
+In any case, I've done some debugging of the work from yesterday and also written the new configuration system!

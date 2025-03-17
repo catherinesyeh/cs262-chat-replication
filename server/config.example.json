@@ -1,0 +1,11 @@
+{
+  "replicaID": "1",
+  "hostname": "localhost",
+  "clientPort": "55555",
+  "replicaPort": "55556",
+  "databaseFile": "example.db",
+  "introductionPoint": {
+    "hostname": "localhost",
+    "port": "55550"
+  }
+}

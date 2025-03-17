@@ -1,4 +1,4 @@
-package edu.harvard.Logic;
+package edu.harvard.logic;
 
 import static com.google.protobuf.util.Timestamps.fromMillis;
 import static java.lang.System.currentTimeMillis;
@@ -12,16 +12,16 @@ import edu.harvard.Chat.LoginCreateRequest;
 import edu.harvard.Chat.LoginCreateResponse;
 import edu.harvard.Chat.ChatMessage;
 import edu.harvard.Chat.SendMessageRequest;
-import edu.harvard.Logic.OperationHandler.HandleException;
+import edu.harvard.logic.OperationHandler.HandleException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class OperationHandlerTest {
+class OperationTest {
   @Test
-  void operationTest() {
+  void operationTest() throws Exception {
     try {
       Database db = new Database();
       OperationHandler handler = new OperationHandler(db);
@@ -31,9 +31,11 @@ public class OperationHandlerTest {
       LoginCreateRequest u2 = LoginCreateRequest.newBuilder().setUsername("catherine")
           .setPasswordHash("password2passwordpasswordpasswordpasswordpasswordpassword").build();
       assertEquals("1-1", handler.lookupSession(handler.createAccount(u1).getSessionKey()));
+      long timestamp = currentTimeMillis();
+      Thread.sleep(2);
       assertEquals("1-2", handler.lookupSession(handler.createAccount(u2).getSessionKey()));
       // Reusing a username should fail
-      assertThrows(HandleException.class, () -> handler.createAccount(u2));
+      assertEquals(false, handler.createAccount(u2).getSuccess());
       // Log into one
       AccountLookupResponse lookup = handler.lookupAccount("june");
       assertEquals(true, lookup.getExists());
@@ -51,7 +53,7 @@ public class OperationHandlerTest {
       assertEquals(accountList.get(0).getUsername(), u1.getUsername());
       assertEquals(1, accountList.size());
       ListAccountsRequest listRequest2 = ListAccountsRequest.newBuilder().setMaximumNumber(1)
-          .setOffsetTimestamp(fromMillis(0))
+          .setOffsetTimestamp(fromMillis(timestamp))
           .setFilterText("").build();
       List<Account> accountList2 = handler.listAccounts(listRequest2).getAccountsList();
       assertEquals(accountList2.get(0).getUsername(), u2.getUsername());

@@ -1,11 +1,11 @@
-package edu.harvard.Logic;
+package edu.harvard.logic;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import edu.harvard.Data.Data;
+import edu.harvard.data.Data;
 
-public class DatabaseTest {
+class DatabaseTest {
   Data.Message buildMessage(String sender_id, String recipient_id, boolean read, String message, int id) {
     Data.Message m = new Data.Message();
     m.sender_id = sender_id;

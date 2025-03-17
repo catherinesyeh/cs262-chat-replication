@@ -8,7 +8,7 @@ This project should provide a fully functional chat system built with gRPC that 
 
 1. Duplicate [config_example.json](config_example.json) and rename to `config.json`.
    - Fill in your configuration details.
-2. Duplicate [server/config.example.properties](server/config.example.properties) and rename to `server/config.properties`.
+2. Duplicate [server/config.example.json](server/config.example.json) and rename to `server/config.json`, or `server/config-1.json` or similar if multiple servers are being run.
    - Fill in your configuration details. Be sure these match!
 3. Install the python dependencies for the client (this requires `poetry` to be installed):
 
@@ -22,7 +22,7 @@ The proto file is in the `proto/` directory. It is symlinked into the expected s
 
 ## Server
 
-The server is a Java application built using Gradle. On Linux, run `./gradlew run` from the `server` directory to run the server. (On Windows, this can be replaced with `./gradlew.bat`.)
+The server is a Java application built using Gradle. On Linux, run `./gradlew run --args='[config file path]'` from the `server` directory to run the server. (On Windows, this can be replaced with `./gradlew.bat`.) The argument can be omitted if `config.json` is the name of the configuration file.
 
 ### Server Testing
 

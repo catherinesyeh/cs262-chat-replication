@@ -5,4 +5,5 @@
 build
 bin
 
-config.properties
+config.json
+config-*.json

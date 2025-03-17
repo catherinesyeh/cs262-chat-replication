@@ -3,20 +3,15 @@
  */
 package edu.harvard;
 
-import java.io.FileInputStream;
+import static java.lang.System.exit;
+
 import java.io.IOException;
-import java.util.Properties;
 
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-
-import edu.harvard.Logic.Database;
-import edu.harvard.Logic.OperationHandler;
-import edu.harvard.Logic.OperationHandler.HandleException;
-
 import edu.harvard.Chat.AccountLookupRequest;
 import edu.harvard.Chat.AccountLookupResponse;
 import edu.harvard.Chat.DeleteAccountRequest;
@@ -29,14 +24,25 @@ import edu.harvard.Chat.RequestMessagesRequest;
 import edu.harvard.Chat.RequestMessagesResponse;
 import edu.harvard.Chat.SendMessageRequest;
 import edu.harvard.Chat.SendMessageResponse;
+import edu.harvard.logic.Configuration;
+import edu.harvard.logic.Database;
+import edu.harvard.logic.OperationHandler;
+import edu.harvard.logic.OperationHandler.HandleException;
 import edu.harvard.Chat.Empty;
 
 public class App {
 	public static void main(String[] args) {
-		Properties prop = new Properties();
-		try (FileInputStream input = new FileInputStream("../config.properties")) {
-			prop.load(input);
-			String port = prop.getProperty("port");
+		Configuration config;
+		try {
+			config = new Configuration("../".concat(args.length > 0 ? args[0] : "config.json"));
+		} catch (IOException ex) {
+			System.err.println("Loading configuration failed!");
+			System.err.println(ex);
+			exit(1);
+			return;
+		}
+		try {
+			String port = config.clientPort;
 			startServer(Integer.parseInt(port));
 		} catch (IOException ex) {
 			System.err.println("Unhandled I/O failure!");
@@ -47,7 +53,7 @@ public class App {
 		}
 	}
 
-	static void startServer(int port) throws IOException {
+	public static void startServer(int port) throws IOException {
 		Database db = new Database();
 		Server server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
 				.addService(new ChatService(db)).build();

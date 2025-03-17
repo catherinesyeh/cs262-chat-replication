@@ -1,4 +1,4 @@
-package edu.harvard.Data;
+package edu.harvard.data;
 
 public class Data {
   // Internal data types (stored in database)
