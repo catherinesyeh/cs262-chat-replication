@@ -4,6 +4,7 @@ import grpc
 import threading
 import bcrypt
 from proto import chat_pb2, chat_pb2_grpc
+from google.protobuf.timestamp_pb2 import Timestamp
 
 
 class ChatClient():
@@ -14,24 +15,22 @@ class ChatClient():
 
     ### GENERAL FUNCTIONS ###
 
-    def __init__(self, host, port, max_msg, max_users):
+    def __init__(self, servers, max_msg, max_users, max_retries=5, retry_interval=2):
         """
         Initialize the client.
 
-        :param host: Server host
-        :param port: Server port
+        :param servers: List of (host, port) tuples
         :param max_msg: Maximum number of messages to display
         :param max_users: Maximum number of users to display
         """
-        channel_str = f"{host}:{port}"
-        base_channel = grpc.insecure_channel(
-            channel_str)  # Create a base channel
-        # Interceptor to track bytes sent/received
-        self.interceptor = BytesTrackingInterceptor(self)
-        # Create a channel with the interceptor
-        self.channel = grpc.intercept_channel(base_channel, self.interceptor)
-        self.stub = chat_pb2_grpc.ChatServiceStub(
-            self.channel)  # Create a stub with the channel and interceptor
+        self.servers = servers  # List of (host, port) tuples
+        self.current_server = None  # Current server
+        self.channel = None  # Channel for gRPC
+        self.stub = None  # Stub for channel and interceptor
+        self.lock = threading.Lock()  # Lock to prevent multiple requests at the same time
+
+        self.max_retries = max_retries  # Maximum number of retries for failover
+        self.retry_interval = retry_interval  # Retry interval for failover
 
         self.session_key = None  # Session key for authenticated requests
         self.running = False  # Flag to control polling thread
@@ -48,7 +47,63 @@ class ChatClient():
         self.bytes_sent = 0  # Number of bytes sent
         self.bytes_received = 0  # Number of bytes received
 
+        self.connect_to_server()
         print("[INITIALIZED] Client initialized")
+
+    def connect_to_server(self):
+        """
+        Attempts to connect to a server from the available list of servers, with failover handling and retries.
+        """
+        attempts = 0
+        while attempts < self.max_retries:
+            for server in self.servers:
+                try:
+                    print(server)
+                    host = server['host']
+                    port = server['port']
+                    channel_str = f"{host}:{port}"
+                    base_channel = grpc.insecure_channel(
+                        channel_str)  # Create a base channel
+                    # Interceptor to track bytes sent/received
+                    self.interceptor = BytesTrackingInterceptor(self)
+                    # Create a channel with the interceptor
+                    self.channel = grpc.intercept_channel(
+                        base_channel, self.interceptor)
+                    self.stub = chat_pb2_grpc.ChatServiceStub(
+                        self.channel)  # Create a stub with the channel and interceptor
+                    self.current_server = server
+                    self.failover_attempts = 0
+                    print(f"[CONNECTED] Connected to {channel_str}")
+                    return
+                except Exception as e:
+                    self.log_error(
+                        f"[ERROR] Connection to {server} failed: {e}")
+
+            attempts += 1
+            wait_time = self.retry_delay * \
+                (2 ** (attempts - 1))  # Exponential backoff
+            print(
+                f"[RETRY] No servers available. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+
+        self.log_error("[ERROR] No servers available after maximum retries.")
+
+    def request_with_failover(self, request_function, *args, **kwargs):
+        """
+        Wrapper function to handle requests with failover.
+
+        :param request_function: Request function
+        :param args: Arguments
+        :param kwargs: Keyword arguments
+        :return: Response from the request function
+        """
+        with self.lock:
+            try:
+                return request_function(*args, **kwargs)
+            except grpc.RpcError as e:
+                self.log_error(f"[ERROR] RPC Error: {e}")
+                self.connect_to_server()
+                return None
 
     def set_message_update_callback(self, callback):
         """
@@ -101,7 +156,8 @@ class ChatClient():
         :return: True if the account exists, False otherwise
         """
         request = chat_pb2.AccountLookupRequest(username=username)
-        response = self.stub.AccountLookup(request)
+        response = self.request_with_failover(self.stub.AccountLookup, request)
+        print(response)
         print(
             f"[LOOKUP] Exists: {response.exists}, Prefix: {response.bcrypt_prefix}")
         if response.exists:
@@ -120,7 +176,7 @@ class ChatClient():
         hashed_password = self.get_hashed_password_for_login(password)
         request = chat_pb2.LoginCreateRequest(
             username=username, password_hash=hashed_password)
-        response = self.stub.Login(request)
+        response = self.request_with_failover(self.stub.Login, request)
 
         if response.success:  # If login is successful, store the session key and username
             print(
@@ -144,7 +200,7 @@ class ChatClient():
         hashed_password = self.generate_hashed_password_for_create(password)
         request = chat_pb2.LoginCreateRequest(
             username=username, password_hash=hashed_password)
-        response = self.stub.CreateAccount(request)
+        response = self.request_with_failover(self.stub.CreateAccount, request)
         if response.success:
             print(
                 f"[CREATE ACCOUNT] Success: {response.success}, Session key: {response.session_key}")
@@ -167,8 +223,9 @@ class ChatClient():
             return self.log_error("No session key available")
 
         request = chat_pb2.ListAccountsRequest(
-            session_key=self.session_key, maximum_number=self.max_users, offset_account_id=self.last_offset_account_id, filter_text=filter_text)
-        response = self.stub.ListAccounts(request)
+            session_key=self.session_key, maximum_number=self.max_users, offset_timestamp=self.generate_timestamp(), filter_text=filter_text)
+        response = self.request_with_failover(
+            self.stub.ListAccounts, request)
         accounts = [(account.id, account.username)
                     for account in response.accounts]
         print(f"[LIST ACCOUNTS] Accounts: {accounts}")
@@ -188,7 +245,7 @@ class ChatClient():
 
         request = chat_pb2.SendMessageRequest(
             session_key=self.session_key, recipient=recipient, message=message)
-        response = self.stub.SendMessage(request)
+        response = self.request_with_failover(self.stub.SendMessage, request)
         print(f"[MESSAGE SENT] ID: {response.id}")
         return True
 
@@ -204,7 +261,8 @@ class ChatClient():
 
         request = chat_pb2.RequestMessagesRequest(
             session_key=self.session_key, maximum_number=self.max_msg)
-        response = self.stub.RequestMessages(request)
+        response = self.request_with_failover(
+            self.stub.RequestMessages, request)
         messages = [(message.id, message.sender,
                      message.message) for message in response.messages]
         if len(messages) > 0:
@@ -227,7 +285,7 @@ class ChatClient():
 
         request = chat_pb2.DeleteMessagesRequest(
             session_key=self.session_key, id=message_ids)
-        self.stub.DeleteMessages(request)
+        self.request_with_failover(self.stub.DeleteMessages, request)
         print(f"[DELETED MESSAGES] IDs: {message_ids}")
         return True
 
@@ -243,7 +301,7 @@ class ChatClient():
 
         request = chat_pb2.DeleteAccountRequest(
             session_key=self.session_key)
-        self.stub.DeleteAccount(request)
+        self.request_with_failover(self.stub.DeleteAccount, request)
         print(f"[DELETED ACCOUNT] Session key: {self.session_key}")
         self.session_key = None
         return True
@@ -288,3 +346,13 @@ class ChatClient():
         hashed_password = bcrypt.hashpw(password.encode(), salt).decode()
         self.bcrypt_prefix = salt.decode()
         return hashed_password
+
+    def generate_timestamp(self):
+        """
+        Generate a timestamp.
+
+        :return: Timestamp
+        """
+        timestamp = Timestamp()
+        timestamp.GetCurrentTime()
+        return timestamp

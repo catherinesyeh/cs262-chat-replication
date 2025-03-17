@@ -1,6 +1,18 @@
 {
-  "SERVER_HOST": "YOUR_SERVER_HOST",
-  "SERVER_PORT": 12345,
+  "SERVERS": [
+    {
+      "host": "YOUR_SERVER_HOST1",
+      "port": "12345"
+    },
+    {
+      "host": "YOUR_SERVER_HOST2",
+      "port": "23456"
+    },
+    {
+      "host": "YOUR_SERVER_HOST3",
+      "port": "34567"
+    }
+  ],
   "MAX_MSG_TO_DISPLAY": 10,
   "MAX_USERS_TO_DISPLAY": 10
 }

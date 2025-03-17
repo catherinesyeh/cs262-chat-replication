@@ -13,9 +13,8 @@ def get_config(config_file=CONFIG_FILE):
     with open(config_file, "r") as f:
         config = json.load(f)
 
-    host = config["SERVER_HOST"]
-    port = config["SERVER_PORT"]
+    servers = config["SERVERS"]
     max_msg = config["MAX_MSG_TO_DISPLAY"]
     max_users = config["MAX_USERS_TO_DISPLAY"]
 
-    return {"host": host, "port": port, "max_msg": max_msg, "max_users": max_users}
+    return {"servers": servers, "max_msg": max_msg, "max_users": max_users}

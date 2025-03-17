@@ -22,9 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nchat.proto\x12\x0b\x65\x64u.harvard\"\'\n\x07\x41\x63\x63ount\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x10\n\x08username\x18\x02 \x01(\t\":\n\x0b\x43hatMessage\x12\n\n\x02id\x18\x01 \x01(\x05\x12\x0e\n\x06sender\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"(\n\x14\x41\x63\x63ountLookupRequest\x12\x10\n\x08username\x18\x01 \x01(\t\">\n\x15\x41\x63\x63ountLookupResponse\x12\x0e\n\x06\x65xists\x18\x01 \x01(\x08\x12\x15\n\rbcrypt_prefix\x18\x02 \x01(\t\"=\n\x12LoginCreateRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x15\n\rpassword_hash\x18\x02 \x01(\t\"T\n\x13LoginCreateResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x13\n\x0bsession_key\x18\x02 \x01(\t\x12\x17\n\x0funread_messages\x18\x03 \x01(\x05\"r\n\x13ListAccountsRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x16\n\x0emaximum_number\x18\x02 \x01(\r\x12\x19\n\x11offset_account_id\x18\x03 \x01(\r\x12\x13\n\x0b\x66ilter_text\x18\x04 \x01(\t\">\n\x14ListAccountsResponse\x12&\n\x08\x61\x63\x63ounts\x18\x01 \x03(\x0b\x32\x14.edu.harvard.Account\"M\n\x12SendMessageRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x11\n\trecipient\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"!\n\x13SendMessageResponse\x12\n\n\x02id\x18\x01 \x01(\x05\"E\n\x16RequestMessagesRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x16\n\x0emaximum_number\x18\x02 \x01(\r\"E\n\x17RequestMessagesResponse\x12*\n\x08messages\x18\x01 \x03(\x0b\x32\x18.edu.harvard.ChatMessage\"8\n\x15\x44\x65leteMessagesRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x03(\x05\"+\n\x14\x44\x65leteAccountRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\"\x07\n\x05\x45mpty2\x9c\x05\n\x0b\x43hatService\x12V\n\rAccountLookup\x12!.edu.harvard.AccountLookupRequest\x1a\".edu.harvard.AccountLookupResponse\x12J\n\x05Login\x12\x1f.edu.harvard.LoginCreateRequest\x1a .edu.harvard.LoginCreateResponse\x12R\n\rCreateAccount\x12\x1f.edu.harvard.LoginCreateRequest\x1a .edu.harvard.LoginCreateResponse\x12S\n\x0cListAccounts\x12 .edu.harvard.ListAccountsRequest\x1a!.edu.harvard.ListAccountsResponse\x12P\n\x0bSendMessage\x12\x1f.edu.harvard.SendMessageRequest\x1a .edu.harvard.SendMessageResponse\x12\\\n\x0fRequestMessages\x12#.edu.harvard.RequestMessagesRequest\x1a$.edu.harvard.RequestMessagesResponse\x12H\n\x0e\x44\x65leteMessages\x12\".edu.harvard.DeleteMessagesRequest\x1a\x12.edu.harvard.Empty\x12\x46\n\rDeleteAccount\x12!.edu.harvard.DeleteAccountRequest\x1a\x12.edu.harvard.EmptyB\r\n\x0b\x65\x64u.harvardb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nchat.proto\x12\x0b\x65\x64u.harvard\x1a\x1fgoogle/protobuf/timestamp.proto\"W\n\x07\x41\x63\x63ount\x12\n\n\x02id\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"j\n\x0b\x43hatMessage\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06sender\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\x12.\n\ncreated_at\x18\x04 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\"(\n\x14\x41\x63\x63ountLookupRequest\x12\x10\n\x08username\x18\x01 \x01(\t\">\n\x15\x41\x63\x63ountLookupResponse\x12\x0e\n\x06\x65xists\x18\x01 \x01(\x08\x12\x15\n\rbcrypt_prefix\x18\x02 \x01(\t\"=\n\x12LoginCreateRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x15\n\rpassword_hash\x18\x02 \x01(\t\"T\n\x13LoginCreateResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x13\n\x0bsession_key\x18\x02 \x01(\t\x12\x17\n\x0funread_messages\x18\x03 \x01(\x05\"\x8d\x01\n\x13ListAccountsRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x16\n\x0emaximum_number\x18\x02 \x01(\r\x12\x34\n\x10offset_timestamp\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x13\n\x0b\x66ilter_text\x18\x04 \x01(\t\">\n\x14ListAccountsResponse\x12&\n\x08\x61\x63\x63ounts\x18\x01 \x03(\x0b\x32\x14.edu.harvard.Account\"M\n\x12SendMessageRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x11\n\trecipient\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"!\n\x13SendMessageResponse\x12\n\n\x02id\x18\x01 \x01(\t\"E\n\x16RequestMessagesRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\x16\n\x0emaximum_number\x18\x02 \x01(\r\"E\n\x17RequestMessagesResponse\x12*\n\x08messages\x18\x01 \x03(\x0b\x32\x18.edu.harvard.ChatMessage\"8\n\x15\x44\x65leteMessagesRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x03(\t\"+\n\x14\x44\x65leteAccountRequest\x12\x13\n\x0bsession_key\x18\x01 \x01(\t\"\x07\n\x05\x45mpty2\x9c\x05\n\x0b\x43hatService\x12V\n\rAccountLookup\x12!.edu.harvard.AccountLookupRequest\x1a\".edu.harvard.AccountLookupResponse\x12J\n\x05Login\x12\x1f.edu.harvard.LoginCreateRequest\x1a .edu.harvard.LoginCreateResponse\x12R\n\rCreateAccount\x12\x1f.edu.harvard.LoginCreateRequest\x1a .edu.harvard.LoginCreateResponse\x12S\n\x0cListAccounts\x12 .edu.harvard.ListAccountsRequest\x1a!.edu.harvard.ListAccountsResponse\x12P\n\x0bSendMessage\x12\x1f.edu.harvard.SendMessageRequest\x1a .edu.harvard.SendMessageResponse\x12\\\n\x0fRequestMessages\x12#.edu.harvard.RequestMessagesRequest\x1a$.edu.harvard.RequestMessagesResponse\x12H\n\x0e\x44\x65leteMessages\x12\".edu.harvard.DeleteMessagesRequest\x1a\x12.edu.harvard.Empty\x12\x46\n\rDeleteAccount\x12!.edu.harvard.DeleteAccountRequest\x1a\x12.edu.harvard.EmptyB\r\n\x0b\x65\x64u.harvardb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,36 +33,36 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'chat_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\013edu.harvard'
-  _globals['_ACCOUNT']._serialized_start=27
-  _globals['_ACCOUNT']._serialized_end=66
-  _globals['_CHATMESSAGE']._serialized_start=68
-  _globals['_CHATMESSAGE']._serialized_end=126
-  _globals['_ACCOUNTLOOKUPREQUEST']._serialized_start=128
-  _globals['_ACCOUNTLOOKUPREQUEST']._serialized_end=168
-  _globals['_ACCOUNTLOOKUPRESPONSE']._serialized_start=170
-  _globals['_ACCOUNTLOOKUPRESPONSE']._serialized_end=232
-  _globals['_LOGINCREATEREQUEST']._serialized_start=234
-  _globals['_LOGINCREATEREQUEST']._serialized_end=295
-  _globals['_LOGINCREATERESPONSE']._serialized_start=297
-  _globals['_LOGINCREATERESPONSE']._serialized_end=381
-  _globals['_LISTACCOUNTSREQUEST']._serialized_start=383
-  _globals['_LISTACCOUNTSREQUEST']._serialized_end=497
-  _globals['_LISTACCOUNTSRESPONSE']._serialized_start=499
-  _globals['_LISTACCOUNTSRESPONSE']._serialized_end=561
-  _globals['_SENDMESSAGEREQUEST']._serialized_start=563
-  _globals['_SENDMESSAGEREQUEST']._serialized_end=640
-  _globals['_SENDMESSAGERESPONSE']._serialized_start=642
-  _globals['_SENDMESSAGERESPONSE']._serialized_end=675
-  _globals['_REQUESTMESSAGESREQUEST']._serialized_start=677
-  _globals['_REQUESTMESSAGESREQUEST']._serialized_end=746
-  _globals['_REQUESTMESSAGESRESPONSE']._serialized_start=748
-  _globals['_REQUESTMESSAGESRESPONSE']._serialized_end=817
-  _globals['_DELETEMESSAGESREQUEST']._serialized_start=819
-  _globals['_DELETEMESSAGESREQUEST']._serialized_end=875
-  _globals['_DELETEACCOUNTREQUEST']._serialized_start=877
-  _globals['_DELETEACCOUNTREQUEST']._serialized_end=920
-  _globals['_EMPTY']._serialized_start=922
-  _globals['_EMPTY']._serialized_end=929
-  _globals['_CHATSERVICE']._serialized_start=932
-  _globals['_CHATSERVICE']._serialized_end=1600
+  _globals['_ACCOUNT']._serialized_start=60
+  _globals['_ACCOUNT']._serialized_end=147
+  _globals['_CHATMESSAGE']._serialized_start=149
+  _globals['_CHATMESSAGE']._serialized_end=255
+  _globals['_ACCOUNTLOOKUPREQUEST']._serialized_start=257
+  _globals['_ACCOUNTLOOKUPREQUEST']._serialized_end=297
+  _globals['_ACCOUNTLOOKUPRESPONSE']._serialized_start=299
+  _globals['_ACCOUNTLOOKUPRESPONSE']._serialized_end=361
+  _globals['_LOGINCREATEREQUEST']._serialized_start=363
+  _globals['_LOGINCREATEREQUEST']._serialized_end=424
+  _globals['_LOGINCREATERESPONSE']._serialized_start=426
+  _globals['_LOGINCREATERESPONSE']._serialized_end=510
+  _globals['_LISTACCOUNTSREQUEST']._serialized_start=513
+  _globals['_LISTACCOUNTSREQUEST']._serialized_end=654
+  _globals['_LISTACCOUNTSRESPONSE']._serialized_start=656
+  _globals['_LISTACCOUNTSRESPONSE']._serialized_end=718
+  _globals['_SENDMESSAGEREQUEST']._serialized_start=720
+  _globals['_SENDMESSAGEREQUEST']._serialized_end=797
+  _globals['_SENDMESSAGERESPONSE']._serialized_start=799
+  _globals['_SENDMESSAGERESPONSE']._serialized_end=832
+  _globals['_REQUESTMESSAGESREQUEST']._serialized_start=834
+  _globals['_REQUESTMESSAGESREQUEST']._serialized_end=903
+  _globals['_REQUESTMESSAGESRESPONSE']._serialized_start=905
+  _globals['_REQUESTMESSAGESRESPONSE']._serialized_end=974
+  _globals['_DELETEMESSAGESREQUEST']._serialized_start=976
+  _globals['_DELETEMESSAGESREQUEST']._serialized_end=1032
+  _globals['_DELETEACCOUNTREQUEST']._serialized_start=1034
+  _globals['_DELETEACCOUNTREQUEST']._serialized_end=1077
+  _globals['_EMPTY']._serialized_start=1079
+  _globals['_EMPTY']._serialized_end=1086
+  _globals['_CHATSERVICE']._serialized_start=1089
+  _globals['_CHATSERVICE']._serialized_end=1757
 # @@protoc_insertion_point(module_scope)

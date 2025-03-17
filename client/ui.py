@@ -223,10 +223,12 @@ class ChatUI:
             self.root, relief=tk.RAISED, bd=2, padx=5, pady=5)
         settings_frame.grid(row=0, column=0, columnspan=2, sticky="we")
 
-        tk.Button(settings_frame, text="Log out", fg="red",
-                  command=self.disconnect).pack(side=tk.LEFT, padx=5, pady=5)
+        tk.Button(settings_frame, text="View Available Servers", command=self.view_servers).pack(
+            side=tk.LEFT, padx=5, pady=5)
         tk.Button(settings_frame, text="Delete Account", fg="red",
                   command=self.confirm_delete_account).pack(side=tk.RIGHT, padx=5, pady=5)
+        tk.Button(settings_frame, text="Log out", fg="red",
+                  command=self.disconnect).pack(side=tk.RIGHT, padx=5, pady=5)
 
         # Container to hold both sidebar and chat frame
         container = tk.Frame(self.root)
@@ -344,6 +346,26 @@ class ChatUI:
                 if isinstance(widget, tk.Label):
                     widget.config(wraplength=self.message_wrap_length)
 
+    ### VIEW SERVERS ###
+    def view_servers(self):
+        """
+        Display the available servers in a popup window.
+        """
+        server_window = tk.Toplevel(self.root)
+        server_window.title("Available Servers")
+        server_window.geometry("300x200")
+
+        tk.Label(server_window, text="Available Servers:").pack(pady=5)
+
+        server_listbox = tk.Listbox(server_window, height=10)
+        server_listbox.pack(fill=tk.BOTH, expand=True)
+
+        for server in self.client.servers:
+            server_listbox.insert(tk.END, f"{server['host']}:{server['port']}")
+
+        tk.Button(server_window, text="Close",
+                  command=server_window.destroy).pack(pady=10)
+
     ### LIST ACCOUNTS WORKFLOW ###
     def load_user_list(self, reset_pages=True):
         """
@@ -363,10 +385,7 @@ class ChatUI:
 
         if search_text != self.prev_search:
             self.prev_search = search_text
-            self.client.last_offset_account_id = 0  # Reset offset when search text changes
             self.all_users = []  # Clear existing users
-        else:  # If search text is the same, increment offset to last user ID
-            self.client.last_offset_account_id = self.all_users[-1][0] if self.all_users else 0
 
         print(f"[DEBUG] Fetching users with search text: {search_text}")
         users = self.client.list_accounts(search_text)
