@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import edu.harvard.data.Data.Account;
@@ -26,15 +25,11 @@ public class Database {
   // Optimization for getting unread messages
   private Map<String, ArrayList<String>> unreadMessagesPerAccount;
 
-  // Session keys for currently logged in users.
-  private Map<String, String> sessions;
-
   public Database() {
     accountMap = new HashMap<>();
     accountUsernameMap = new HashMap<>();
     messageMap = new HashMap<>();
     unreadMessagesPerAccount = new HashMap<>();
-    sessions = new HashMap<>();
   }
 
   public synchronized Account lookupAccount(String id) {
@@ -43,16 +38,6 @@ public class Database {
 
   public synchronized Account lookupAccountByUsername(String username) {
     return accountMap.get(accountUsernameMap.get(username));
-  }
-
-  public synchronized String createSession(String id) {
-    String key = UUID.randomUUID().toString();
-    sessions.put(key, id);
-    return key;
-  }
-
-  public synchronized String getSession(String key) {
-    return sessions.get(key);
   }
 
   public synchronized boolean accountExists(String username) {

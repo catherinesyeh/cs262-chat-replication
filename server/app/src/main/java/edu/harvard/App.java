@@ -42,8 +42,7 @@ public class App {
 			return;
 		}
 		try {
-			String port = config.clientPort;
-			startServer(Integer.parseInt(port));
+			startServer(config);
 		} catch (IOException ex) {
 			System.err.println("Unhandled I/O failure!");
 			System.err.println(ex.getMessage());
@@ -53,13 +52,13 @@ public class App {
 		}
 	}
 
-	public static void startServer(int port) throws IOException {
+	public static void startServer(Configuration configuration) throws IOException {
 		Database db = new Database();
-		Server server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
-				.addService(new ChatService(db)).build();
+		Server server = Grpc.newServerBuilderForPort(configuration.clientPort, InsecureServerCredentials.create())
+				.addService(new ChatService(db, configuration)).build();
 		server.start();
 		try {
-			System.out.println("Running!");
+			System.out.println("Server ".concat(configuration.replicaID).concat(" is running!"));
 			server.awaitTermination();
 		} catch (InterruptedException ex) {
 			System.exit(0);
@@ -69,8 +68,8 @@ public class App {
 	private static class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
 		private final OperationHandler handler;
 
-		ChatService(Database db) {
-			this.handler = new OperationHandler(db);
+		ChatService(Database db, Configuration config) {
+			this.handler = new OperationHandler(db, config);
 		}
 
 		@Override

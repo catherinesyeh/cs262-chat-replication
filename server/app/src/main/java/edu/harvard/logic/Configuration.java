@@ -9,23 +9,24 @@ import org.json.JSONObject;
 public class Configuration {
   public String replicaID;
   public String hostname;
-  public String clientPort;
-  public String replicaPort;
+  public int clientPort;
+  public int replicaPort;
   public String databaseFile;
+  public String jwtSecret;
   public String introductionHostname;
-  public String introductionPort;
+  public int introductionPort;
 
   public Configuration(String filename) throws IOException {
     JSONObject obj = new JSONObject(new String(Files.readAllBytes(Path.of(filename))));
     this.replicaID = obj.getString("replicaID");
     this.hostname = obj.getString("hostname");
-    this.clientPort = obj.getString("clientPort");
-    this.replicaPort = obj.getString("replicaPort");
+    this.clientPort = Integer.parseInt(obj.getString("clientPort"));
+    this.replicaPort = Integer.parseInt(obj.getString("replicaPort"));
     this.databaseFile = obj.getString("databaseFile");
+    this.jwtSecret = obj.getString("jwtSecret");
     if (obj.has("introductionPoint")) {
-      System.out.println("hey");
       this.introductionHostname = obj.getJSONObject("introductionPoint").getString("hostname");
-      this.introductionPort = obj.getJSONObject("introductionPoint").getString("port");
+      this.introductionPort = Integer.parseInt(obj.getJSONObject("introductionPoint").getString("port"));
     }
   }
 }

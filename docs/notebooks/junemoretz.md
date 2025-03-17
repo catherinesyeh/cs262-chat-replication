@@ -54,3 +54,5 @@ Username validation will need to be moved elsewhere - I'm updating the database 
 I've had some weird issues with tests not running in some cases that I've been unable to figure out, but it does seem I can at least trigger the skipped ones if I specify them? Absolutely no idea what's going on here though. Really weird. I've looked into it and found nothing useful - some of them are just randomly skipped sometimes.
 
 In any case, I've done some debugging of the work from yesterday and also written the new configuration system!
+
+JWTs are now also done. Next up is the log-replay system, which will constitute a major rewrite of the five mutating actions.

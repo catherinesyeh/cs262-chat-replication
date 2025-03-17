@@ -1,9 +1,10 @@
 {
   "replicaID": "1",
   "hostname": "localhost",
-  "clientPort": "55555",
+  "clientPort": "58585",
   "replicaPort": "55556",
   "databaseFile": "example.db",
+  "jwtSecret": "anyArbitrarySecretString",
   "introductionPoint": {
     "hostname": "localhost",
     "port": "55550"

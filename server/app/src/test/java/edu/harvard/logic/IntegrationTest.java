@@ -34,11 +34,12 @@ class IntegrationTest {
      * The client integration tests serve as a more comprehensive end-to-end test!
      */
     @Test
-    void grpcServerWorks() {
+    void grpcServerWorks() throws Exception {
+        Configuration config = new Configuration("../config.example.json");
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
-                    App.startServer(PORT);
+                    App.startServer(config);
                 } catch (IOException ex) {
                     System.err.println("Unhandled I/O failure!");
                     System.err.println(ex.getMessage());

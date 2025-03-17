@@ -7,6 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import edu.harvard.Chat;
 import edu.harvard.Chat.AccountLookupResponse;
@@ -33,14 +38,28 @@ public class OperationHandler {
 
   private Database db;
   private LogReplay logReplay;
+  private Configuration configuration;
 
-  public OperationHandler(Database db) {
+  private String createSession(String accountID) {
+    Algorithm algorithm = Algorithm.HMAC512(configuration.jwtSecret);
+    String token = JWT.create()
+        .withSubject(accountID)
+        .sign(algorithm);
+    return token;
+  }
+
+  public OperationHandler(Database db, Configuration configuration) {
     this.db = db;
-    this.logReplay = new LogReplay(1);
+    this.logReplay = new LogReplay(configuration.replicaID);
+    this.configuration = configuration;
   }
 
   public String lookupSession(String key) {
-    return db.getSession(key);
+    Algorithm algorithm = Algorithm.HMAC512(configuration.jwtSecret);
+    JWTVerifier verifier = JWT.require(algorithm)
+        .build();
+    DecodedJWT decodedJWT = verifier.verify(key);
+    return decodedJWT.getSubject();
   }
 
   public AccountLookupResponse lookupAccount(String username) {
@@ -70,7 +89,7 @@ public class OperationHandler {
     account.id = logReplay.getAccountId();
     account.timestamp = currentTimeMillis();
     db.createAccount(account);
-    String key = db.createSession(account.id);
+    String key = createSession(account.id);
     return LoginCreateResponse.newBuilder().setSuccess(true).setUnreadMessages(0).setSessionKey(key).build();
   }
 
@@ -87,7 +106,7 @@ public class OperationHandler {
       response.setSuccess(false);
       return response.build();
     }
-    String key = db.createSession(account.id);
+    String key = createSession(account.id);
     int unreadCount = db.getUnreadMessageCount(account.id);
     response.setSuccess(true);
     response.setUnreadMessages(unreadCount);

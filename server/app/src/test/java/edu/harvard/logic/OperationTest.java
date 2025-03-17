@@ -24,7 +24,8 @@ class OperationTest {
   void operationTest() throws Exception {
     try {
       Database db = new Database();
-      OperationHandler handler = new OperationHandler(db);
+      Configuration config = new Configuration("../config.example.json");
+      OperationHandler handler = new OperationHandler(db, config);
       // Create two accounts
       LoginCreateRequest u1 = LoginCreateRequest.newBuilder().setUsername("june")
           .setPasswordHash("passwordpasswordpasswordpasswordpasswordpasswordpassword").build();
