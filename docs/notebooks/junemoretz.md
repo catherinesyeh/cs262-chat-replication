@@ -39,10 +39,12 @@ Getting started today! First priority is going to be writing some proper documen
 
 Todos:
 
-- Rewrite ID system
+- Rewrite ID system (done!)
 - Rewrite server configuration system
-- Add timestamp generation/storage and redo pagination to use timestamps
+- Add timestamp generation/storage and redo pagination to use timestamps (done!)
 - Rebuild session keys as JWTs
 - Write log-replay system for all database-relevant actions
 - Build persistence for log-replay system
 - Replication!
+
+Username validation will need to be moved elsewhere - I'm updating the database class to make it usable by the log-replay system. Same with marking messages as read. (update: both of these are done, and are tested in OperationHandlerTest)

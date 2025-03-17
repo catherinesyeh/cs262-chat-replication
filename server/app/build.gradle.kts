@@ -33,6 +33,7 @@ dependencies {
     implementation("at.favre.lib:bcrypt:0.10.2")
     implementation("io.grpc:grpc-protobuf:1.70.0")
     implementation("io.grpc:grpc-stub:1.70.0")
+    implementation("com.google.protobuf:protobuf-java-util:3.25.6")
 
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
 }

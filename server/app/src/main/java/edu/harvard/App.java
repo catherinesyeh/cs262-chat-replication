@@ -95,7 +95,7 @@ public class App {
 
 		@Override
 		public void listAccounts(ListAccountsRequest request, StreamObserver<ListAccountsResponse> response) {
-			Integer id = handler.lookupSession(request.getSessionKey());
+			String id = handler.lookupSession(request.getSessionKey());
 			if (id == null) {
 				Status status = Status.UNAUTHENTICATED.withDescription("Invalid session key");
 				response.onError(status.asRuntimeException());
@@ -108,13 +108,13 @@ public class App {
 
 		@Override
 		public void sendMessage(SendMessageRequest request, StreamObserver<SendMessageResponse> response) {
-			Integer user_id = handler.lookupSession(request.getSessionKey());
+			String user_id = handler.lookupSession(request.getSessionKey());
 			if (user_id == null) {
 				Status status = Status.UNAUTHENTICATED.withDescription("Invalid session key");
 				response.onError(status.asRuntimeException());
 			} else {
 				try {
-					int message_id = handler.sendMessage(user_id, request);
+					String message_id = handler.sendMessage(user_id, request);
 					response.onNext(SendMessageResponse.newBuilder().setId(message_id).build());
 					response.onCompleted();
 				} catch (HandleException e) {
@@ -126,7 +126,7 @@ public class App {
 
 		@Override
 		public void requestMessages(RequestMessagesRequest request, StreamObserver<RequestMessagesResponse> response) {
-			Integer id = handler.lookupSession(request.getSessionKey());
+			String id = handler.lookupSession(request.getSessionKey());
 			if (id == null) {
 				Status status = Status.UNAUTHENTICATED.withDescription("Invalid session key");
 				response.onError(status.asRuntimeException());
@@ -139,7 +139,7 @@ public class App {
 
 		@Override
 		public void deleteMessages(DeleteMessagesRequest request, StreamObserver<Empty> response) {
-			Integer id = handler.lookupSession(request.getSessionKey());
+			String id = handler.lookupSession(request.getSessionKey());
 			if (id == null) {
 				Status status = Status.UNAUTHENTICATED.withDescription("Invalid session key");
 				response.onError(status.asRuntimeException());
@@ -152,7 +152,7 @@ public class App {
 
 		@Override
 		public void deleteAccount(DeleteAccountRequest request, StreamObserver<Empty> response) {
-			Integer id = handler.lookupSession(request.getSessionKey());
+			String id = handler.lookupSession(request.getSessionKey());
 			if (id == null) {
 				Status status = Status.UNAUTHENTICATED.withDescription("Invalid session key");
 				response.onError(status.asRuntimeException());

@@ -1,5 +1,7 @@
 package edu.harvard.Logic;
 
+import static java.lang.System.currentTimeMillis;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,12 +31,14 @@ public class OperationHandler {
   }
 
   private Database db;
+  private LogReplay logReplay;
 
   public OperationHandler(Database db) {
     this.db = db;
+    this.logReplay = new LogReplay(1);
   }
 
-  public Integer lookupSession(String key) {
+  public String lookupSession(String key) {
     return db.getSession(key);
   }
 
@@ -57,15 +61,16 @@ public class OperationHandler {
     } catch (Exception e) {
       throw new HandleException("Invalid password hash!");
     }
-    account.username = request.getUsername();
-    account.password_hash = BCrypt.withDefaults().hashToString(12, request.getPasswordHash().toCharArray());
-    int id = db.createAccount(account);
-    if (id != 0) {
-      String key = db.createSession(account.id);
-      return LoginCreateResponse.newBuilder().setSuccess(true).setUnreadMessages(0).setSessionKey(key).build();
-    } else {
+    if (db.accountExists(request.getUsername())) {
       return LoginCreateResponse.newBuilder().setSuccess(false).build();
     }
+    account.username = request.getUsername();
+    account.password_hash = BCrypt.withDefaults().hashToString(12, request.getPasswordHash().toCharArray());
+    account.id = logReplay.getAccountId();
+    account.timestamp = currentTimeMillis();
+    db.createAccount(account);
+    String key = db.createSession(account.id);
+    return LoginCreateResponse.newBuilder().setSuccess(true).setUnreadMessages(0).setSessionKey(key).build();
   }
 
   public LoginCreateResponse login(LoginCreateRequest request) {
@@ -94,7 +99,7 @@ public class OperationHandler {
     Collection<Account> allAccounts = db.getAllAccounts();
     for (Account account : allAccounts) {
       boolean include = true;
-      if (account.id <= request.getOffsetAccountId()) {
+      if (account.timestamp <= request.getOffsetTimestamp().getNanos() / 1000) {
         include = false;
       }
       if (!account.username.contains(request.getFilterText())) {
@@ -114,7 +119,7 @@ public class OperationHandler {
     return ListAccountsResponse.newBuilder().addAllAccounts(responseList).build();
   }
 
-  public int sendMessage(int sender_id, SendMessageRequest request) throws HandleException {
+  public String sendMessage(String sender_id, SendMessageRequest request) throws HandleException {
     // Look up sender
     Account sender = db.lookupAccount(sender_id);
     if (sender == null) {
@@ -134,26 +139,31 @@ public class OperationHandler {
     m.recipient_id = account.id;
     m.sender_id = sender_id;
     m.read = false;
-    int id = db.createMessage(m);
-    return id;
+    m.id = logReplay.getMessageId();
+    m.timestamp = currentTimeMillis();
+    db.createMessage(m);
+    return m.id;
   }
 
-  public RequestMessagesResponse requestMessages(int user_id, int maximum_number) {
+  public RequestMessagesResponse requestMessages(String user_id, int maximum_number) {
     List<Message> unreadMessages = db.getUnreadMessages(user_id, maximum_number);
     ArrayList<ChatMessage> responseMessages = new ArrayList<>(unreadMessages.size());
+    ArrayList<String> messageIds = new ArrayList<>(unreadMessages.size());
     for (Message message : unreadMessages) {
       ChatMessage.Builder messageResponse = ChatMessage.newBuilder();
       messageResponse.setId(message.id);
       messageResponse.setMessage(message.message);
       messageResponse.setSender(db.lookupAccount(message.sender_id).username);
       responseMessages.add(messageResponse.build());
+      messageIds.add(message.id);
     }
+    db.markMessagesRead(messageIds);
     return RequestMessagesResponse.newBuilder().addAllMessages(responseMessages).build();
   }
 
   // returns success boolean
-  public boolean deleteMessages(int user_id, List<Integer> ids) {
-    for (Integer i : ids) {
+  public boolean deleteMessages(String user_id, List<String> ids) {
+    for (String i : ids) {
       Message m = db.getMessage(i);
       if (m.recipient_id != user_id && m.sender_id != user_id) {
         return false;
@@ -163,7 +173,7 @@ public class OperationHandler {
     return true;
   }
 
-  public void deleteAccount(int user_id) {
+  public void deleteAccount(String user_id) {
     db.deleteAccount(user_id);
   }
 }

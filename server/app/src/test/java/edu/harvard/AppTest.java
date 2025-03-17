@@ -62,7 +62,7 @@ class AppTest {
         ListAccountsResponse list = stub.listAccounts(ListAccountsRequest.newBuilder()
                 .setSessionKey(createResponse.getSessionKey()).setMaximumNumber(1).build());
         assertEquals("june", list.getAccounts(0).getUsername());
-        assertEquals(1, list.getAccounts(0).getId());
+        assertEquals("1-1", list.getAccounts(0).getId());
 
         t.interrupt();
     }

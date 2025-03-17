@@ -3,7 +3,6 @@ package edu.harvard.Logic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,15 +17,15 @@ import edu.harvard.Data.Data.Message;
  * Higher-level application logic will take place outside the database.
  */
 public class Database {
-  private Map<Integer, Account> accountMap;
-  private Map<String, Integer> accountUsernameMap;
-  private Map<Integer, Message> messageMap;
+  private Map<String, Account> accountMap;
+  private Map<String, String> accountUsernameMap;
+  private Map<String, Message> messageMap;
 
   // Optimization for getting unread messages
-  private Map<Integer, ArrayList<Integer>> unreadMessagesPerAccount;
+  private Map<String, ArrayList<String>> unreadMessagesPerAccount;
 
   // Session keys for currently logged in users.
-  private Map<String, Integer> sessions;
+  private Map<String, String> sessions;
 
   public Database() {
     accountMap = new HashMap<>();
@@ -36,7 +35,7 @@ public class Database {
     sessions = new HashMap<>();
   }
 
-  public synchronized Account lookupAccount(int id) {
+  public synchronized Account lookupAccount(String id) {
     return accountMap.get(id);
   }
 
@@ -44,28 +43,23 @@ public class Database {
     return accountMap.get(accountUsernameMap.get(username));
   }
 
-  public synchronized String createSession(int id) {
+  public synchronized String createSession(String id) {
     String key = UUID.randomUUID().toString();
     sessions.put(key, id);
     return key;
   }
 
-  public synchronized Integer getSession(String key) {
+  public synchronized String getSession(String key) {
     return sessions.get(key);
   }
 
-  /*
-   * Verifies username is not taken. Returns account ID: 0 means failure.
-   */
-  public synchronized int createAccount(Account account) {
-    if (accountUsernameMap.get(account.username) != null) {
-      return 0;
-    }
-    Integer next_id = accountMap.size() == 0 ? 1 : Collections.max(accountMap.keySet()) + 1;
-    account.id = next_id;
-    accountMap.put(next_id, account);
-    accountUsernameMap.put(account.username, next_id);
-    return next_id;
+  public synchronized boolean accountExists(String username) {
+    return accountUsernameMap.containsKey(username);
+  }
+
+  public synchronized void createAccount(Account account) {
+    accountMap.put(account.id, account);
+    accountUsernameMap.put(account.username, account.id);
   }
 
   public synchronized Collection<Account> getAllAccounts() {
@@ -76,48 +70,42 @@ public class Database {
    * Adds a message to the database.
    * If message.read is false, also adds it to a user's unread list.
    */
-  public synchronized int createMessage(Message message) {
-    Integer next_id = messageMap.size() == 0 ? 1 : Collections.max(messageMap.keySet()) + 1;
-    message.id = next_id;
-    messageMap.put(next_id, message);
+  public synchronized void createMessage(Message message) {
+    messageMap.put(message.id, message);
     if (!message.read) {
-      List<Integer> unreads = unreadMessagesPerAccount.get(message.recipient_id);
+      List<String> unreads = unreadMessagesPerAccount.get(message.recipient_id);
       if (unreads != null) {
-        unreads.add(next_id);
+        unreads.add(message.id);
       } else {
-        unreadMessagesPerAccount.put(message.recipient_id, new ArrayList<>(Arrays.asList(next_id)));
+        unreadMessagesPerAccount.put(message.recipient_id, new ArrayList<>(Arrays.asList(message.id)));
       }
     }
-    return next_id;
   }
 
-  public synchronized int getUnreadMessageCount(int user_id) {
-    ArrayList<Integer> unreads = unreadMessagesPerAccount.get(user_id);
+  public synchronized int getUnreadMessageCount(String user_id) {
+    ArrayList<String> unreads = unreadMessagesPerAccount.get(user_id);
     if (unreads == null) {
       return 0;
     }
     return unreads.size();
   }
 
-  public synchronized Message getMessage(int id) {
+  public synchronized Message getMessage(String id) {
     return messageMap.get(id);
   }
 
   /*
-   * Gets the first [number] unread messages for a user, and marks them as read
+   * Gets the first [number] unread messages for a user
    */
-  public synchronized List<Message> getUnreadMessages(int user_id, int number) {
+  public synchronized List<Message> getUnreadMessages(String user_id, int number) {
     ArrayList<Message> list = new ArrayList<>(number);
-    ArrayList<Integer> unreads = unreadMessagesPerAccount.get(user_id);
+    ArrayList<String> unreads = unreadMessagesPerAccount.get(user_id);
     if (unreads == null) {
       return list;
     }
     for (int i = 0; i < number; i++) {
-      if (unreads.size() > 0) {
-        int id = unreads.remove(0);
-        Message m = messageMap.get(id);
-        m.read = true;
-        list.add(m);
+      if (unreads.size() > i) {
+        list.add(messageMap.get(unreads.get(i)));
       } else {
         break;
       }
@@ -125,16 +113,23 @@ public class Database {
     return list;
   }
 
+  public synchronized void markMessagesRead(List<String> message_ids) {
+    for (String id : message_ids) {
+      Message m = messageMap.get(id);
+      m.read = true;
+      unreadMessagesPerAccount.get(m.recipient_id).remove(id);
+    }
+  }
+
   /*
    * Verification that the user can delete this message must take place in
    * higher-level logic.
    */
-  public synchronized void deleteMessage(int id) {
+  public synchronized void deleteMessage(String id) {
     Message m = messageMap.get(id);
     if (m != null) {
-      // Integer cast ensures the correct variant of remove is used
       if (!m.read) {
-        unreadMessagesPerAccount.get(m.recipient_id).remove((Integer) id);
+        unreadMessagesPerAccount.get(m.recipient_id).remove(id);
       }
       messageMap.remove(id);
     }
@@ -143,7 +138,7 @@ public class Database {
   /*
    * The username remains claimed.
    */
-  public synchronized void deleteAccount(int id) {
+  public synchronized void deleteAccount(String id) {
     unreadMessagesPerAccount.remove(id);
     accountMap.remove(id);
   }
