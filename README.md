@@ -2,7 +2,7 @@
 
 CS262 Design Exercise 4: Chat Server with Replication
 
-This project should provide a fully functional chat system built with gRPC that is 2-fault tolerant + persistent storage.
+This project should provide a fully functional chat system built with gRPC that is 2-fault tolerant + has persistent storage.
 
 ## Setup
 
