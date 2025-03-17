@@ -72,7 +72,6 @@ class ChatClient():
                     self.stub = chat_pb2_grpc.ChatServiceStub(
                         self.channel)  # Create a stub with the channel and interceptor
                     self.current_server = server
-                    self.failover_attempts = 0
                     print(f"[CONNECTED] Connected to {channel_str}")
                     return
                 except Exception as e:
