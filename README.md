@@ -8,6 +8,11 @@ This project should provide a fully functional chat system built with gRPC that 
 
 1. Duplicate [config_example.json](config_example.json) and rename to `config.json`.
    - Fill in your configuration details.
+   - If you're not using replication, you can omit the `introductionPoint`.
+   - If you're using replication:
+     - Create a configuration with no `introductionPoint` and start that server first.
+     - Use that server as the `introductionPoint` for other servers. The `port` should be that server's `replicaPort`!
+     - All `replicaID`s must be unique. All `jwtSecret`s must be identical. If you're running multiple servers from the same folder/machine, be sure to use different `databaseFile`s for them!
 2. Duplicate [server/config.example.json](server/config.example.json) and rename to `server/config.json`, or `server/config-1.json` or similar if multiple servers are being run.
    - Fill in your configuration details. Be sure these match!
 3. Install the python dependencies for the client (this requires `poetry` to be installed):
