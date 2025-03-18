@@ -56,3 +56,13 @@ I've had some weird issues with tests not running in some cases that I've been u
 In any case, I've done some debugging of the work from yesterday and also written the new configuration system!
 
 JWTs are now also done. Next up is the log-replay system, which will constitute a major rewrite of the five mutating actions.
+
+I started writing the log-replay system, including the proto specification.
+
+Current todos for log-replay base + persistence:
+
+- Make OperationHandler generate LogMessage types and dispatch them
+- Make LogReplay apply these to the database properly
+- Make LogReplay save LogMessages persistently
+- Replay LogMessages from disk on startup
+- Minimal testing for LogReplay system itself (mostly this should already be tested by the operation handler tests - I'm just rewriting internals!)

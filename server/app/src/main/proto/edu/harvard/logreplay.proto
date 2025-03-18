@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package edu.harvard;
+
+option java_package = "edu.harvard";
+
+// Log-Replay messages
+
+message NewAccount {
+  string id = 1;
+  string username = 2;
+  string bcrypt_prefix = 3;
+  string password_hash = 4; // AFTER double-hashing!
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message NewChatMessage {
+  string id = 1;
+  string sender_id = 2;
+  string recipient_id = 3;
+  string message = 4;
+  bool read = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message MarkAsRead {
+  repeated string id = 1;
+}
+
+message DeleteMessages {
+  repeated string id = 1;
+}
+
+message DeleteAccount {
+  string id = 1;
+}
+
+message LogMessage {
+  oneof log_message {
+    NewAccount new_account = 1;
+    NewChatMessage new_chat_message = 2;
+    MarkAsRead mark_as_read = 3;
+    DeleteMessages delete_messages = 4;
+    DeleteAccount delete_account = 5;
+  };
+  string originating_replica_id = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// Replication service messages
+
+message RelayResponse {
+  bool needs_resync = 1;
+}
+
+message ReplicaInfo {
+  string id = 1;
+  string hostname = 2;
+  uint32 port = 3;
+}
+
+message ReplicaSyncState {
+  string id = 1;
+  google.protobuf.Timestamp latest_timestamp = 2;
+}
+
+message IntroductionRequest {
+  ReplicaInfo info = 1;
+  repeated ReplicaSyncState sync_states = 2;
+}
+
+message IntroductionResponse {
+  repeated ReplicaInfo replicas = 1;
+  repeated LogMessage messages = 2;
+}
+
+service ReplicationService {
+  rpc Introduction(IntroductionRequest) returns (IntroductionResponse);
+  rpc Relay(LogMessage) returns (RelayResponse);
+}
