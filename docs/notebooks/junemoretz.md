@@ -66,3 +66,7 @@ Current todos for log-replay base + persistence:
 - Make LogReplay save LogMessages persistently
 - Replay LogMessages from disk on startup
 - Minimal testing for LogReplay system itself (mostly this should already be tested by the operation handler tests - I'm just rewriting internals!)
+
+## March 18, 2025
+
+Action items 1/2 for LogReplay are done! Next up is persistence (and a quick test case for persistence).

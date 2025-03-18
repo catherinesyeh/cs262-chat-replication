@@ -68,6 +68,31 @@ New replicas can be added to the network dynamically. When a replica spins up, i
 
 Each replica tracks the identity of every other replica so it knows where to relay messages. The spin-up process described above is used to synchronize entering replicas with each other, which enters them into the network state map of every replica they introduce themselves to. A failure to relay a log message leads to a replica being removed from the network map by the originating replica. If that replica then attempts to relay a message to the replica that removed it from its network map, it will be instructed to re-synchronize before being allowed to relay a message. This ensures that replicas can drop in and out of the network and will still end up in a consistent state.
 
+For mutating requests, the flow is therefore as follows:
+
+- Client sends request to server
+- gRPC ChatService (App.java) receives request and relays it to OperationHandler
+- OperationHandler performs necessary checks, generates response values, etc. and builds the inner part of a LogMessage relating to the mutation, and dispatches it to LogReplay
+- LogReplay transforms the inner part of the LogMessage to a complete LogMessage by adding the originating replica ID and a timestamp
+- LogReplay replays the message against the database (Database.java) to apply the actual mutation to the in-memory datastore, and saves the LogMessage to an in-memory array of LogMessages
+- LogReplay saves the LogMessage to disk
+- LogReplay dispatches the LogMessage to ReplicationService
+- ReplicationService relays the LogMessage to all other replicas
+
+On the other replicas, the following flow occurs:
+
+- gRPC ReplicationService (ReplicationService.java) receives the Relay request
+- ReplicationService calls LogReplay.receiveMessage
+- LogReplay replays the LogMessage against the database and saves it both in-memory and to disk.
+
+On startup, the flow is:
+
+- LogReplay reads the log messages from disk and replays them
+- ReplicationService starts up and introduces itself to its introduction point
+- On receiving an introduction response, all messages are sent to LogReplay.receiveMessage, and the network state is updated in ReplicationService
+- ReplicationService repeatedly makes introductions until it has been introduced to every server
+- The ChatService can now be started!
+
 ## Internals
 
 The server code is in the `server/app/src` directory. `main` contains all the functional classes, while `test` contains unit tests.

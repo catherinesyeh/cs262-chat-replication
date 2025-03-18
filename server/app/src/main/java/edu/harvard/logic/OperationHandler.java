@@ -1,5 +1,6 @@
 package edu.harvard.logic;
 
+import static com.google.protobuf.util.Timestamps.fromMillis;
 import static com.google.protobuf.util.Timestamps.toMillis;
 import static java.lang.System.currentTimeMillis;
 
@@ -22,6 +23,11 @@ import edu.harvard.Chat.ListAccountsRequest;
 import edu.harvard.Chat.ListAccountsResponse;
 import edu.harvard.Chat.ChatMessage;
 import edu.harvard.Chat.SendMessageRequest;
+import edu.harvard.Logreplay.DeleteAccount;
+import edu.harvard.Logreplay.DeleteMessages;
+import edu.harvard.Logreplay.MarkAsRead;
+import edu.harvard.Logreplay.NewAccount;
+import edu.harvard.Logreplay.NewChatMessage;
 import edu.harvard.data.Data.Account;
 import edu.harvard.data.Data.Message;
 
@@ -40,18 +46,18 @@ public class OperationHandler {
   private LogReplay logReplay;
   private Configuration configuration;
 
+  public OperationHandler(Database db, Configuration configuration) {
+    this.db = db;
+    this.logReplay = new LogReplay(configuration.replicaID, db);
+    this.configuration = configuration;
+  }
+
   private String createSession(String accountID) {
     Algorithm algorithm = Algorithm.HMAC512(configuration.jwtSecret);
     String token = JWT.create()
         .withSubject(accountID)
         .sign(algorithm);
     return token;
-  }
-
-  public OperationHandler(Database db, Configuration configuration) {
-    this.db = db;
-    this.logReplay = new LogReplay(configuration.replicaID);
-    this.configuration = configuration;
   }
 
   public String lookupSession(String key) {
@@ -75,21 +81,21 @@ public class OperationHandler {
   }
 
   public LoginCreateResponse createAccount(LoginCreateRequest request) throws HandleException {
-    Account account = new Account();
+    NewAccount.Builder account = NewAccount.newBuilder();
     try {
-      account.client_bcrypt_prefix = request.getPasswordHash().substring(0, 29);
+      account.setBcryptPrefix(request.getPasswordHash().substring(0, 29));
     } catch (Exception e) {
       throw new HandleException("Invalid password hash!");
     }
     if (db.accountExists(request.getUsername())) {
       return LoginCreateResponse.newBuilder().setSuccess(false).build();
     }
-    account.username = request.getUsername();
-    account.password_hash = BCrypt.withDefaults().hashToString(12, request.getPasswordHash().toCharArray());
-    account.id = logReplay.getAccountId();
-    account.timestamp = currentTimeMillis();
-    db.createAccount(account);
-    String key = createSession(account.id);
+    account.setUsername(request.getUsername());
+    account.setPasswordHash(BCrypt.withDefaults().hashToString(12, request.getPasswordHash().toCharArray()));
+    account.setId(logReplay.getAccountId());
+    account.setCreatedAt(fromMillis(currentTimeMillis()));
+    logReplay.dispatchNewAccount(account.build());
+    String key = createSession(account.getId());
     return LoginCreateResponse.newBuilder().setSuccess(true).setUnreadMessages(0).setSessionKey(key).build();
   }
 
@@ -153,16 +159,17 @@ public class OperationHandler {
     if (account.id.equals(sender_id)) {
       throw new HandleException("You cannot message yourself!");
     }
-    // Build Message
-    Message m = new Message();
-    m.message = request.getMessage();
-    m.recipient_id = account.id;
-    m.sender_id = sender_id;
-    m.read = false;
-    m.id = logReplay.getMessageId();
-    m.timestamp = currentTimeMillis();
-    db.createMessage(m);
-    return m.id;
+    // Build NewChatMessage
+    NewChatMessage m = NewChatMessage.newBuilder()
+        .setMessage(request.getMessage())
+        .setSenderId(sender_id)
+        .setRecipientId(account.id)
+        .setRead(false)
+        .setId(logReplay.getMessageId())
+        .setCreatedAt(fromMillis(currentTimeMillis()))
+        .build();
+    logReplay.dispatchNewChatMessage(m);
+    return m.getId();
   }
 
   public RequestMessagesResponse requestMessages(String user_id, int maximum_number) {
@@ -177,7 +184,8 @@ public class OperationHandler {
       responseMessages.add(messageResponse.build());
       messageIds.add(message.id);
     }
-    db.markMessagesRead(messageIds);
+    logReplay.dispatchMarkAsRead(MarkAsRead.newBuilder().addAllId(
+        messageIds).build());
     return RequestMessagesResponse.newBuilder().addAllMessages(responseMessages).build();
   }
 
@@ -188,12 +196,13 @@ public class OperationHandler {
       if (!m.recipient_id.equals(user_id) && !m.sender_id.equals(user_id)) {
         return false;
       }
-      db.deleteMessage(i);
     }
+    logReplay.dispatchDeleteMessages(DeleteMessages.newBuilder().addAllId(
+        ids).build());
     return true;
   }
 
   public void deleteAccount(String user_id) {
-    db.deleteAccount(user_id);
+    logReplay.dispatchDeleteAccount(DeleteAccount.newBuilder().setId(user_id).build());
   }
 }
