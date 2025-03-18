@@ -36,6 +36,7 @@ class IntegrationTest {
     @Test
     void grpcServerWorks() throws Exception {
         Configuration config = new Configuration("../config.example.json");
+        config.databaseFile = null;
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {

@@ -46,9 +46,9 @@ public class OperationHandler {
   private LogReplay logReplay;
   private Configuration configuration;
 
-  public OperationHandler(Database db, Configuration configuration) {
+  public OperationHandler(Database db, LogReplay logReplay, Configuration configuration) {
     this.db = db;
-    this.logReplay = new LogReplay(configuration.replicaID, db);
+    this.logReplay = logReplay;
     this.configuration = configuration;
   }
 

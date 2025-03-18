@@ -26,6 +26,7 @@ import edu.harvard.Chat.SendMessageRequest;
 import edu.harvard.Chat.SendMessageResponse;
 import edu.harvard.logic.Configuration;
 import edu.harvard.logic.Database;
+import edu.harvard.logic.LogReplay;
 import edu.harvard.logic.OperationHandler;
 import edu.harvard.logic.OperationHandler.HandleException;
 import edu.harvard.Chat.Empty;
@@ -53,9 +54,14 @@ public class App {
 	}
 
 	public static void startServer(Configuration configuration) throws IOException {
+		// Step 1: create database and LogReplay, replay data from disk
 		Database db = new Database();
+		LogReplay logReplay = new LogReplay(configuration.replicaID, configuration.databaseFile, db);
+		logReplay.replayMessagesFromDisk();
+		// Step 2: start ReplicationService
+		// Step 3: start ChatService
 		Server server = Grpc.newServerBuilderForPort(configuration.clientPort, InsecureServerCredentials.create())
-				.addService(new ChatService(db, configuration)).build();
+				.addService(new ChatService(db, logReplay, configuration)).build();
 		server.start();
 		try {
 			System.out.println("Server ".concat(configuration.replicaID).concat(" is running!"));
@@ -68,8 +74,8 @@ public class App {
 	private static class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
 		private final OperationHandler handler;
 
-		ChatService(Database db, Configuration config) {
-			this.handler = new OperationHandler(db, config);
+		ChatService(Database db, LogReplay logReplay, Configuration config) {
+			this.handler = new OperationHandler(db, logReplay, config);
 		}
 
 		@Override

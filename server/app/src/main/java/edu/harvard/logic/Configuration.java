@@ -22,7 +22,9 @@ public class Configuration {
     this.hostname = obj.getString("hostname");
     this.clientPort = Integer.parseInt(obj.getString("clientPort"));
     this.replicaPort = Integer.parseInt(obj.getString("replicaPort"));
-    this.databaseFile = obj.getString("databaseFile");
+    if (obj.has("databaseFile")) {
+      this.databaseFile = obj.getString("databaseFile");
+    }
     this.jwtSecret = obj.getString("jwtSecret");
     if (obj.has("introductionPoint")) {
       this.introductionHostname = obj.getJSONObject("introductionPoint").getString("hostname");

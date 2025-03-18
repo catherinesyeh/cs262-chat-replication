@@ -69,4 +69,8 @@ Current todos for log-replay base + persistence:
 
 ## March 18, 2025
 
-Action items 1/2 for LogReplay are done! Next up is persistence (and a quick test case for persistence).
+Action items 1/2 for LogReplay are done! Next up is persistence (and a quick test case for persistence). (Update: all persistence features are done!)
+
+Todo when I start on replication: test LogReplay internal message cache in LogReplayTest, including originating replica ID and timestamps
+
+An ordering constraint: when receiving a message backlog after introducing to a replica, the order of messages with a particular type does not matter (one message cannot affect another), but the ordering between types does matter. Thus, all account creations must occur before message sends, message sends before mark as read and delete message, and account creations before account deletions. This invariant matters only for receiving backlog messages, as the timestamps do not provide sufficient ordering due to possible clock drift between replicas. Replays from the local database can be done sequentially - they will never be stored in non-causal order.
