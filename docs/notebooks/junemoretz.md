@@ -93,7 +93,10 @@ Later todo: sending network state to clients upon request, so clients can update
 
 I finished a lot of the replication work yesterday. The remaining steps still to be finished:
 
-- Processing introduction responses
-- Relay sending
+- Processing introduction responses (done!)
+- Relay sending (done!)
 - Testing
+  - Introduction
+  - Successful relay
+  - Failed relay
 - Sending network state to clients

@@ -12,6 +12,7 @@ import edu.harvard.Logreplay.IntroductionResponse;
 import edu.harvard.Logreplay.LogMessage;
 import edu.harvard.Logreplay.RelayResponse;
 import edu.harvard.Logreplay.ReplicaInfo;
+import edu.harvard.Logreplay.LogMessage.LogMessageCase;
 import edu.harvard.ReplicationServiceGrpc.ReplicationServiceBlockingStub;
 import edu.harvard.ReplicationServiceGrpc.ReplicationServiceImplBase;
 import io.grpc.Grpc;
@@ -83,24 +84,54 @@ public class ReplicationService {
 
   public synchronized void relayMessage(LogMessage message) {
     // relay to all live replicas
-    // failed relay = remove from map!
+    for (ReplicaInfo replica : liveReplicas.values()) {
+      try {
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(replica.getHostname(), replica.getPort())
+            .usePlaintext().build();
+        ReplicationServiceBlockingStub stub = ReplicationServiceGrpc.newBlockingStub(channel);
+        RelayResponse response = stub.relay(message);
+        // if this replica doesn't know we exist for some reason, introduce then relay
+        if (response.getNeedsResync()) {
+          introduce(replica);
+          stub.relay(message);
+        }
+      } catch (Exception e) {
+        // remove from live replicas on failure
+        System.out.println("Exception while relaying to replica ".concat(replica.getId()).concat(" at ")
+            .concat(replica.getHostname()).concat(":").concat(String.valueOf(replica.getPort())));
+        System.out.println(e);
+        System.out.println(e.getMessage());
+        liveReplicas.remove(replica.getId());
+      }
+    }
   }
 
   private synchronized void handleIntroductionResponse(List<LogMessage> messages) {
-    // todo filter for each type and then apply all of those
+    // filter for each type and then apply all of those
+    // create account
+    messages.stream().filter(m -> m.getLogMessageCase().equals(LogMessageCase.NEW_ACCOUNT))
+        .forEach(logReplay::receiveMessage);
+    // send message
+    messages.stream().filter(m -> m.getLogMessageCase().equals(LogMessageCase.NEW_CHAT_MESSAGE))
+        .forEach(logReplay::receiveMessage);
+    // mark as read
+    messages.stream().filter(m -> m.getLogMessageCase().equals(LogMessageCase.MARK_AS_READ))
+        .forEach(logReplay::receiveMessage);
+    // delete message
+    messages.stream().filter(m -> m.getLogMessageCase().equals(LogMessageCase.DELETE_MESSAGES))
+        .forEach(logReplay::receiveMessage);
+    // delete account
+    messages.stream().filter(m -> m.getLogMessageCase().equals(LogMessageCase.DELETE_ACCOUNT))
+        .forEach(logReplay::receiveMessage);
   }
 
   // repeatedly make introductions until done!
-  public synchronized void introduce() {
+  private synchronized void introduce(ReplicaInfo initialReplica) {
     // build its own ReplicaInfo
     ReplicaInfo myInfo = ReplicaInfo.newBuilder().setHostname(config.hostname).setPort(config.replicaPort)
         .setId(config.replicaID).build();
-    // create list of introduction points
     List<ReplicaInfo> introductionPoints = new ArrayList<>();
-    if (config.introductionHostname != null) {
-      introductionPoints.add(
-          ReplicaInfo.newBuilder().setHostname(config.introductionHostname).setPort(config.introductionPort).build());
-    }
+    introductionPoints.add(initialReplica);
     while (introductionPoints.size() > 0) {
       ReplicaInfo introPoint = introductionPoints.remove(0);
       // introduce to first introduction point
@@ -119,5 +150,16 @@ public class ReplicationService {
         }
       }
     }
+  }
+
+  public synchronized void introduce() {
+    if (config.introductionHostname != null) {
+      introduce(
+          ReplicaInfo.newBuilder().setHostname(config.introductionHostname).setPort(config.introductionPort).build());
+    }
+  }
+
+  public synchronized List<ReplicaInfo> getOtherReplicas() {
+    return List.copyOf(liveReplicas.values());
   }
 }
