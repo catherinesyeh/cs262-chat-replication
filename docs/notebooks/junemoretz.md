@@ -71,6 +71,18 @@ Current todos for log-replay base + persistence:
 
 Action items 1/2 for LogReplay are done! Next up is persistence (and a quick test case for persistence). (Update: all persistence features are done!)
 
-Todo when I start on replication: test LogReplay internal message cache in LogReplayTest, including originating replica ID and timestamps
+Todo when I start on replication: test LogReplay internal message cache in LogReplayTest, including originating replica ID and timestamps (this is now also done!)
 
 An ordering constraint: when receiving a message backlog after introducing to a replica, the order of messages with a particular type does not matter (one message cannot affect another), but the ordering between types does matter. Thus, all account creations must occur before message sends, message sends before mark as read and delete message, and account creations before account deletions. This invariant matters only for receiving backlog messages, as the timestamps do not provide sufficient ordering due to possible clock drift between replicas. Replays from the local database can be done sequentially - they will never be stored in non-causal order.
+
+Todos for replication:
+
+- Creating a gRPC service for replication (done!)
+- Receiving + responding to introductions
+- Network state tracking
+- Sending introductions (and processing responses following above ordering!)
+- Full startup flow, properly ordered
+- Relay sending
+- Relay receiving
+
+Later todo: sending network state to clients upon request, so clients can update the set of live servers they can communicate with!

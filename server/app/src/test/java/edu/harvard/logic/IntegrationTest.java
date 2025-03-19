@@ -7,11 +7,15 @@ import org.junit.jupiter.api.Test;
 
 import edu.harvard.App;
 import edu.harvard.ChatServiceGrpc;
+import edu.harvard.ReplicationServiceGrpc;
 import edu.harvard.Chat.ListAccountsRequest;
 import edu.harvard.Chat.ListAccountsResponse;
 import edu.harvard.Chat.LoginCreateRequest;
 import edu.harvard.Chat.LoginCreateResponse;
 import edu.harvard.ChatServiceGrpc.ChatServiceBlockingStub;
+import edu.harvard.Logreplay.LogMessage;
+import edu.harvard.Logreplay.RelayResponse;
+import edu.harvard.ReplicationServiceGrpc.ReplicationServiceBlockingStub;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -67,6 +71,15 @@ class IntegrationTest {
                 .setSessionKey(createResponse.getSessionKey()).setMaximumNumber(1).build());
         assertEquals("june", list.getAccounts(0).getUsername());
         assertEquals("1-1", list.getAccounts(0).getId());
+
+        // check that replication service is up
+        ManagedChannel channel2 = ManagedChannelBuilder.forAddress("localhost", 55556).usePlaintext().build();
+        ReplicationServiceBlockingStub replicationStub = ReplicationServiceGrpc.newBlockingStub(channel2);
+
+        // should respond with "needs resync" since it won't know this replica ID
+        RelayResponse response = replicationStub
+                .relay(LogMessage.newBuilder().setOriginatingReplicaId("steve").build());
+        assertEquals(true, response.getNeedsResync());
 
         t.interrupt();
     }

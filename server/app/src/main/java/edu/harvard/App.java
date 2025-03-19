@@ -28,6 +28,7 @@ import edu.harvard.logic.Configuration;
 import edu.harvard.logic.Database;
 import edu.harvard.logic.LogReplay;
 import edu.harvard.logic.OperationHandler;
+import edu.harvard.logic.ReplicationService;
 import edu.harvard.logic.OperationHandler.HandleException;
 import edu.harvard.Chat.Empty;
 
@@ -59,6 +60,8 @@ public class App {
 		LogReplay logReplay = new LogReplay(configuration.replicaID, configuration.databaseFile, db);
 		logReplay.replayMessagesFromDisk();
 		// Step 2: start ReplicationService
+		ReplicationService replicationService = new ReplicationService(configuration, logReplay);
+		Server replicationServer = replicationService.startService();
 		// Step 3: start ChatService
 		Server server = Grpc.newServerBuilderForPort(configuration.clientPort, InsecureServerCredentials.create())
 				.addService(new ChatService(db, logReplay, configuration)).build();
@@ -67,7 +70,12 @@ public class App {
 			System.out.println("Server ".concat(configuration.replicaID).concat(" is running!"));
 			server.awaitTermination();
 		} catch (InterruptedException ex) {
-			System.exit(0);
+			replicationServer.shutdown();
+			try {
+				replicationServer.awaitTermination();
+			} catch (InterruptedException ex2) {
+				System.exit(0);
+			}
 		}
 	}
 

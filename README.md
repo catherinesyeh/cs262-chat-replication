@@ -23,7 +23,7 @@ poetry install
 
 ## Proto Files
 
-The proto file is in the `proto/` directory. It is symlinked into the expected subdirectory in the server directory.
+The chat proto file is in the `proto/` directory. It is symlinked into the expected subdirectory in the server directory. The log-replay proto file is used by the log-replay system on the server side only, and is only located in the `server/src/main/proto/edu/harvard` directory.
 
 ## Server
 

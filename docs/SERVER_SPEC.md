@@ -97,6 +97,8 @@ On startup, the flow is:
 
 The server code is in the `server/app/src` directory. `main` contains all the functional classes, while `test` contains unit tests.
 
-The `Logic` package contains the actual database and operation logic. These classes only handle internal data classes, and do not interact with the data sent over the network directly, though the `OperationHandler` does reuse some Protobuf generated classes. The database is an in-memory datastore, with no persistence, and is created in `App`. All methods are `synchronized` to allow for cross thread use.
+The `Logic` package contains the actual database and operation logic. These classes only handle internal data classes, and do not interact with the data sent over the network for the chat protocol directly, though the `OperationHandler` does reuse some Protobuf generated classes. The database is an in-memory datastore, with no persistence, and is created in `App`. All methods are `synchronized` to allow for cross thread use.
+
+The `LogReplay` class implements the log-replay system, which handles all state-mutating requests. It handles persistence. The `Configuration` class is a simple JSON configuration loader. The `ReplicationService` class handles replication, and relies heavily on the `LogReplay` class - it implements a gRPC service for communication between replicas, as well as making all requests to other replicas.
 
 The `App` class sets up the gRPC server and handles incoming RPC requests.

@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import edu.harvard.Logreplay.DeleteAccount;
 import edu.harvard.Logreplay.DeleteMessages;
@@ -15,6 +18,7 @@ import edu.harvard.Logreplay.LogMessage;
 import edu.harvard.Logreplay.MarkAsRead;
 import edu.harvard.Logreplay.NewAccount;
 import edu.harvard.Logreplay.NewChatMessage;
+import edu.harvard.Logreplay.ReplicaSyncState;
 import edu.harvard.data.Data.Account;
 import edu.harvard.data.Data.Message;
 
@@ -48,6 +52,42 @@ public class LogReplay {
     String id = replica_id.concat("-").concat(String.valueOf(next_message));
     next_message++;
     return id;
+  }
+
+  // Helpers for ReplicationService
+  public synchronized List<ReplicaSyncState> getLatestTimestamps() {
+    Map<String, Long> latest = new HashMap<>();
+    for (LogMessage m : messages) {
+      if (latest.containsKey(m.getOriginatingReplicaId())) {
+        if (latest.get(m.getOriginatingReplicaId()) < toMillis(m.getTimestamp())) {
+          latest.put(m.getOriginatingReplicaId(), toMillis(m.getTimestamp()));
+        }
+      } else {
+        latest.put(m.getOriginatingReplicaId(), toMillis(m.getTimestamp()));
+      }
+    }
+    List<ReplicaSyncState> syncStates = new ArrayList<>(latest.size());
+    for (String id : latest.keySet()) {
+      syncStates.add(ReplicaSyncState.newBuilder().setId(id)
+          .setLatestTimestamp(fromMillis(latest.get(id))).build());
+    }
+    return syncStates;
+  }
+
+  public synchronized List<LogMessage> getNewerMessages(List<ReplicaSyncState> syncStates) {
+    // Convert into HashMap
+    Map<String, Long> latest = new HashMap<>();
+    for (ReplicaSyncState syncState : syncStates) {
+      latest.put(syncState.getId(), toMillis(syncState.getLatestTimestamp()));
+    }
+    List<LogMessage> newMessages = new ArrayList<>();
+    for (LogMessage m : messages) {
+      if (!latest.containsKey(m.getOriginatingReplicaId()) || (latest.containsKey(m.getOriginatingReplicaId())
+          && latest.get(m.getOriginatingReplicaId()) < toMillis(m.getTimestamp()))) {
+        newMessages.add(m);
+      }
+    }
+    return newMessages;
   }
 
   // Replaying messages

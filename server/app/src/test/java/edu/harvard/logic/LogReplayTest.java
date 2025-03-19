@@ -4,11 +4,13 @@ import org.junit.jupiter.api.Test;
 
 import edu.harvard.Chat.LoginCreateRequest;
 import edu.harvard.Chat.SendMessageRequest;
+import edu.harvard.Logreplay.ReplicaSyncState;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 class LogReplayTest {
   @Test
@@ -34,5 +36,15 @@ class LogReplayTest {
     logReplay2.replayMessagesFromDisk();
     assertEquals(2, db2.getAllAccounts().size());
     assertEquals("Hi!", db2.getMessage("1-1").message);
+    // Test replication service helpers
+    List<ReplicaSyncState> syncStates = logReplay2.getLatestTimestamps();
+    assertEquals(1, syncStates.size());
+    assertEquals("1", syncStates.get(0).getId());
+    assertEquals(0, logReplay2.getNewerMessages(syncStates).size());
+    // Send another message to replica 1 to be sure these work
+    SendMessageRequest msg2 = SendMessageRequest.newBuilder().setRecipient("catherine").setMessage("Hi!").build();
+    assertEquals("1-2", handler.sendMessage("1-1", msg2));
+    assertEquals(1, logReplay1.getNewerMessages(syncStates).size());
+    assertEquals(0, logReplay1.getNewerMessages(logReplay1.getLatestTimestamps()).size());
   }
 }
