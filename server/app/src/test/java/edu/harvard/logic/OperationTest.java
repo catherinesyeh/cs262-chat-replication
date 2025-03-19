@@ -26,7 +26,7 @@ class OperationTest {
       Database db = new Database();
       Configuration config = new Configuration("../config.example.json");
       LogReplay logReplay = new LogReplay(config.replicaID, null, db);
-      OperationHandler handler = new OperationHandler(db, logReplay, config);
+      OperationHandler handler = new OperationHandler(db, logReplay, config, null);
       // Create two accounts
       LoginCreateRequest u1 = LoginCreateRequest.newBuilder().setUsername("june")
           .setPasswordHash("passwordpasswordpasswordpasswordpasswordpasswordpassword").build();

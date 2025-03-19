@@ -78,6 +78,15 @@ message DeleteAccountRequest {
   string session_key = 1;
 }
 
+message ServerInfo {
+  string hostname = 1;
+  uint32 port = 2;
+}
+
+message AvailableReplicas {
+  repeated ServerInfo replicas = 1;
+}
+
 message Empty {}
 
 service ChatService {
@@ -89,4 +98,5 @@ service ChatService {
   rpc RequestMessages(RequestMessagesRequest) returns (RequestMessagesResponse);
   rpc DeleteMessages(DeleteMessagesRequest) returns (Empty);
   rpc DeleteAccount(DeleteAccountRequest) returns (Empty);
+  rpc GetOtherAvailableReplicas(Empty) returns (AvailableReplicas);
 }

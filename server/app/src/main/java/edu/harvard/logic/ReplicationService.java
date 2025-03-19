@@ -57,12 +57,13 @@ public class ReplicationService {
   }
 
   synchronized IntroductionResponse handleIntroduction(IntroductionRequest request) {
-    liveReplicas.put(request.getInfo().getId(), request.getInfo());
-    return IntroductionResponse.newBuilder()
+    IntroductionResponse response = IntroductionResponse.newBuilder()
         .setId(config.replicaID)
         .addAllReplicas(liveReplicas.values())
         .addAllMessages(logReplay.getNewerMessages(request.getSyncStatesList()))
         .build();
+    liveReplicas.put(request.getInfo().getId(), request.getInfo());
+    return response;
   }
 
   synchronized RelayResponse handleRelay(LogMessage message) {
@@ -83,8 +84,8 @@ public class ReplicationService {
   }
 
   public synchronized void relayMessage(LogMessage message) {
-    // relay to all live replicas
-    for (ReplicaInfo replica : liveReplicas.values()) {
+    // relay to all live replicas (copy is necessary since we're modifying it)
+    for (ReplicaInfo replica : List.copyOf(liveReplicas.values())) {
       try {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(replica.getHostname(), replica.getPort())
             .usePlaintext().build();
@@ -145,7 +146,7 @@ public class ReplicationService {
       liveReplicas.put(response.getId(), ReplicaInfo.newBuilder(introPoint).setId(response.getId()).build());
       // add its replicas to the list of introduction points if not in liveReplicas
       for (ReplicaInfo replica : response.getReplicasList()) {
-        if (!liveReplicas.containsKey(replica.getId())) {
+        if (!liveReplicas.containsKey(replica.getId()) && !replica.getId().equals(config.replicaID)) {
           introductionPoints.add(replica);
         }
       }

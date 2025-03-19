@@ -16,6 +16,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import edu.harvard.Chat;
 import edu.harvard.Chat.AccountLookupResponse;
+import edu.harvard.Chat.AvailableReplicas;
 import edu.harvard.Chat.LoginCreateRequest;
 import edu.harvard.Chat.LoginCreateResponse;
 import edu.harvard.Chat.RequestMessagesResponse;
@@ -23,11 +24,13 @@ import edu.harvard.Chat.ListAccountsRequest;
 import edu.harvard.Chat.ListAccountsResponse;
 import edu.harvard.Chat.ChatMessage;
 import edu.harvard.Chat.SendMessageRequest;
+import edu.harvard.Chat.ServerInfo;
 import edu.harvard.Logreplay.DeleteAccount;
 import edu.harvard.Logreplay.DeleteMessages;
 import edu.harvard.Logreplay.MarkAsRead;
 import edu.harvard.Logreplay.NewAccount;
 import edu.harvard.Logreplay.NewChatMessage;
+import edu.harvard.Logreplay.ReplicaInfo;
 import edu.harvard.data.Data.Account;
 import edu.harvard.data.Data.Message;
 
@@ -45,11 +48,14 @@ public class OperationHandler {
   private Database db;
   private LogReplay logReplay;
   private Configuration configuration;
+  private ReplicationService replication;
 
-  public OperationHandler(Database db, LogReplay logReplay, Configuration configuration) {
+  public OperationHandler(Database db, LogReplay logReplay, Configuration configuration,
+      ReplicationService replication) {
     this.db = db;
     this.logReplay = logReplay;
     this.configuration = configuration;
+    this.replication = replication;
   }
 
   private String createSession(String accountID) {
@@ -204,5 +210,14 @@ public class OperationHandler {
 
   public void deleteAccount(String user_id) {
     logReplay.dispatchDeleteAccount(DeleteAccount.newBuilder().setId(user_id).build());
+  }
+
+  public AvailableReplicas getAvailableReplicas() {
+    List<ServerInfo> response = new ArrayList<>();
+    List<ReplicaInfo> liveReplicas = replication.getOtherReplicas();
+    for (ReplicaInfo replica : liveReplicas) {
+      response.add(ServerInfo.newBuilder().setHostname(replica.getHostname()).setPort(replica.getPort()).build());
+    }
+    return AvailableReplicas.newBuilder().addAllReplicas(response).build();
   }
 }

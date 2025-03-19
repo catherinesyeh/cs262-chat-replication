@@ -14,6 +14,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import edu.harvard.Chat.AccountLookupRequest;
 import edu.harvard.Chat.AccountLookupResponse;
+import edu.harvard.Chat.AvailableReplicas;
 import edu.harvard.Chat.DeleteAccountRequest;
 import edu.harvard.Chat.DeleteMessagesRequest;
 import edu.harvard.Chat.ListAccountsRequest;
@@ -65,7 +66,7 @@ public class App {
 		replicationService.introduce();
 		// Step 3: start ChatService
 		Server server = Grpc.newServerBuilderForPort(configuration.clientPort, InsecureServerCredentials.create())
-				.addService(new ChatService(db, logReplay, configuration)).build();
+				.addService(new ChatService(db, logReplay, configuration, replicationService)).build();
 		server.start();
 		try {
 			System.out.println("Server ".concat(configuration.replicaID).concat(" is running!"));
@@ -83,8 +84,8 @@ public class App {
 	private static class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
 		private final OperationHandler handler;
 
-		ChatService(Database db, LogReplay logReplay, Configuration config) {
-			this.handler = new OperationHandler(db, logReplay, config);
+		ChatService(Database db, LogReplay logReplay, Configuration config, ReplicationService replication) {
+			this.handler = new OperationHandler(db, logReplay, config, replication);
 		}
 
 		@Override
@@ -181,6 +182,12 @@ public class App {
 				response.onNext(Empty.newBuilder().build());
 				response.onCompleted();
 			}
+		}
+
+		@Override
+		public void getOtherAvailableReplicas(Empty request, StreamObserver<AvailableReplicas> response) {
+			response.onNext(handler.getAvailableReplicas());
+			response.onCompleted();
 		}
 	}
 }

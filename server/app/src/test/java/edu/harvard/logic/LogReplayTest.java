@@ -19,7 +19,7 @@ class LogReplayTest {
     Files.deleteIfExists(Path.of("../".concat(config.databaseFile)));
     Database db1 = new Database();
     LogReplay logReplay1 = new LogReplay(config.replicaID, config.databaseFile, db1);
-    OperationHandler handler = new OperationHandler(db1, logReplay1, config);
+    OperationHandler handler = new OperationHandler(db1, logReplay1, config, null);
     // Create two accounts and a message with this operation handler
     LoginCreateRequest u1 = LoginCreateRequest.newBuilder().setUsername("june")
         .setPasswordHash("passwordpasswordpasswordpasswordpasswordpasswordpassword").build();

@@ -95,8 +95,10 @@ I finished a lot of the replication work yesterday. The remaining steps still to
 
 - Processing introduction responses (done!)
 - Relay sending (done!)
-- Testing
+- Testing (done!)
   - Introduction
   - Successful relay
   - Failed relay
-- Sending network state to clients
+- Sending network state to clients (done!)
+
+Update - everything is completed! I'll need to run through some manual tests (likely with Catherine) and try out manually spinning up a few servers, particularly across a network, but the automated tests seem to indicate everything is working exactly as expected. Very good to see!
