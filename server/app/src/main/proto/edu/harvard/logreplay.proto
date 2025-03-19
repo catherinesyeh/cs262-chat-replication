@@ -72,8 +72,9 @@ message IntroductionRequest {
 }
 
 message IntroductionResponse {
-  repeated ReplicaInfo replicas = 1;
-  repeated LogMessage messages = 2;
+  string id = 1;
+  repeated ReplicaInfo replicas = 2;
+  repeated LogMessage messages = 3;
 }
 
 service ReplicationService {

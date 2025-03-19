@@ -78,11 +78,22 @@ An ordering constraint: when receiving a message backlog after introducing to a 
 Todos for replication:
 
 - Creating a gRPC service for replication (done!)
-- Receiving + responding to introductions
-- Network state tracking
-- Sending introductions (and processing responses following above ordering!)
-- Full startup flow, properly ordered
+- Receiving + responding to introductions (done!)
+- Network state tracking (done!)
+- Sending introductions (done!)
+- Processing introduction responses (following above ordering!)
+- Full startup flow, properly ordered (done!)
 - Relay sending
-- Relay receiving
+- Relay receiving (done!)
+- Testing
 
 Later todo: sending network state to clients upon request, so clients can update the set of live servers they can communicate with!
+
+## March 19, 2025
+
+I finished a lot of the replication work yesterday. The remaining steps still to be finished:
+
+- Processing introduction responses
+- Relay sending
+- Testing
+- Sending network state to clients

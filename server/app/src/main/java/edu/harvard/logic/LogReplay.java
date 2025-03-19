@@ -27,6 +27,7 @@ import edu.harvard.data.Data.Message;
  */
 public class LogReplay {
   Database db;
+  ReplicationService replicationService = null;
   String replica_id = "0";
   String dbFile;
   int next_account = 1;
@@ -39,6 +40,10 @@ public class LogReplay {
     this.db = db;
     this.dbFile = dbFile;
     this.messages = new ArrayList<>();
+  }
+
+  public void registerReplicationService(ReplicationService replicationService) {
+    this.replicationService = replicationService;
   }
 
   // Helpers for operation handler to generate IDs
@@ -174,7 +179,9 @@ public class LogReplay {
   // replays it, saves it, and then relays it.
   public synchronized void dispatchMessage(LogMessage message) {
     receiveMessage(message);
-    // todo relay
+    if (this.replicationService != null) {
+      this.replicationService.relayMessage(message);
+    }
   }
 
   public synchronized void dispatchBuilder(LogMessage.Builder builder) {

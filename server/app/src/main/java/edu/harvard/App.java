@@ -62,6 +62,7 @@ public class App {
 		// Step 2: start ReplicationService
 		ReplicationService replicationService = new ReplicationService(configuration, logReplay);
 		Server replicationServer = replicationService.startService();
+		replicationService.introduce();
 		// Step 3: start ChatService
 		Server server = Grpc.newServerBuilderForPort(configuration.clientPort, InsecureServerCredentials.create())
 				.addService(new ChatService(db, logReplay, configuration)).build();
