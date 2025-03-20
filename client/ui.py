@@ -648,7 +648,7 @@ class ChatUI:
             messagebox.showerror("Error", "Cannot send message to self.")
             return
 
-        valid_users = [user for _, user in self.all_users]
+        valid_users = [user for _, user, _ in self.all_users]
         if recipient not in valid_users:
             messagebox.showerror("Error", "Recipient not found.")
             return
