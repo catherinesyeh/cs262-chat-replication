@@ -59,6 +59,7 @@ message ReplicaInfo {
   string id = 1;
   string hostname = 2;
   uint32 port = 3;
+  uint32 client_port = 4;
 }
 
 message ReplicaSyncState {
@@ -72,7 +73,7 @@ message IntroductionRequest {
 }
 
 message IntroductionResponse {
-  string id = 1;
+  ReplicaInfo info = 1;
   repeated ReplicaInfo replicas = 2;
   repeated LogMessage messages = 3;
 }

@@ -147,10 +147,10 @@ public class OperationHandler {
     List<Chat.Account> responseList = new ArrayList<>(list.size());
     for (Account a : list) {
       responseList.add(Chat.Account.newBuilder()
-        .setId(a.id)
-        .setUsername(a.username)
-        .setCreatedAt(fromMillis(a.timestamp))
-        .build());
+          .setId(a.id)
+          .setUsername(a.username)
+          .setCreatedAt(fromMillis(a.timestamp))
+          .build());
     }
     return ListAccountsResponse.newBuilder().addAllAccounts(responseList).build();
   }
@@ -220,7 +220,7 @@ public class OperationHandler {
     List<ServerInfo> response = new ArrayList<>();
     List<ReplicaInfo> liveReplicas = replication.getOtherReplicas();
     for (ReplicaInfo replica : liveReplicas) {
-      response.add(ServerInfo.newBuilder().setHostname(replica.getHostname()).setPort(replica.getPort()).build());
+      response.add(ServerInfo.newBuilder().setHostname(replica.getHostname()).setPort(replica.getClientPort()).build());
     }
     return AvailableReplicas.newBuilder().addAllReplicas(response).build();
   }

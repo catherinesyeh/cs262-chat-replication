@@ -57,8 +57,10 @@ public class ReplicationService {
   }
 
   synchronized IntroductionResponse handleIntroduction(IntroductionRequest request) {
+    ReplicaInfo myInfo = ReplicaInfo.newBuilder().setHostname(config.hostname).setPort(config.replicaPort)
+        .setId(config.replicaID).setClientPort(config.clientPort).build();
     IntroductionResponse response = IntroductionResponse.newBuilder()
-        .setId(config.replicaID)
+        .setInfo(myInfo)
         .addAllReplicas(liveReplicas.values())
         .addAllMessages(logReplay.getNewerMessages(request.getSyncStatesList()))
         .build();
@@ -130,7 +132,7 @@ public class ReplicationService {
   private synchronized void introduce(ReplicaInfo initialReplica) {
     // build its own ReplicaInfo
     ReplicaInfo myInfo = ReplicaInfo.newBuilder().setHostname(config.hostname).setPort(config.replicaPort)
-        .setId(config.replicaID).build();
+        .setId(config.replicaID).setClientPort(config.clientPort).build();
     List<ReplicaInfo> introductionPoints = new ArrayList<>();
     introductionPoints.add(initialReplica);
     while (introductionPoints.size() > 0) {
@@ -143,7 +145,7 @@ public class ReplicationService {
           IntroductionRequest.newBuilder().setInfo(myInfo).addAllSyncStates(logReplay.getLatestTimestamps()).build());
       handleIntroductionResponse(response.getMessagesList());
       // add to liveReplicas
-      liveReplicas.put(response.getId(), ReplicaInfo.newBuilder(introPoint).setId(response.getId()).build());
+      liveReplicas.put(response.getInfo().getId(), response.getInfo());
       // add its replicas to the list of introduction points if not in liveReplicas
       for (ReplicaInfo replica : response.getReplicasList()) {
         if (!liveReplicas.containsKey(replica.getId()) && !replica.getId().equals(config.replicaID)) {
