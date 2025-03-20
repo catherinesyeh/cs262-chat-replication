@@ -30,8 +30,9 @@ class ChatUI:
 
         self.prev_search = ""  # Store previous search text for user list
 
-        # Set callback
+        # Set callbacks
         self.client.set_message_update_callback(self.message_callback)
+        self.client.set_replica_update_callback(self.replica_callback)
 
         # Start on the login screen
         self.root.title("Login")
@@ -347,6 +348,26 @@ class ChatUI:
                     widget.config(wraplength=self.message_wrap_length)
 
     ### VIEW SERVERS ###
+    def replica_callback(self):
+        """
+        Callback to update server list when new servers are received.
+        """
+        print("[DEBUG] Detected new servers")
+        self.root.after(0, lambda: self.update_server_list())
+
+    def update_server_list(self):
+        """
+        Updates the displayed list of available servers.
+        """
+        try:
+            if hasattr(self, "server_listbox"):
+                self.server_listbox.delete(0, tk.END)
+                for server in self.client.servers:
+                    self.server_listbox.insert(
+                        tk.END, f"{server['host']}:{server['port']}")
+        except Exception as e:
+            print(f"Error updating server list: {e}")
+
     def view_servers(self):
         """
         Display the available servers in a popup window.
@@ -356,14 +377,8 @@ class ChatUI:
             threading.Thread(
                 target=self.client.update_available_replicas, daemon=True).start()
             # Delay to allow the update to complete
-            self.root.after(100, update_server_list)
-
-        def update_server_list():
-            """Updates the displayed list of available servers."""
-            server_listbox.delete(0, tk.END)
-            for server in self.client.servers:
-                server_listbox.insert(
-                    tk.END, f"{server['host']}:{server['port']}")
+            self.root.after(
+                100, lambda: self.update_server_list())
 
         server_window = tk.Toplevel(self.root)
         server_window.title("Available Servers")
@@ -376,11 +391,11 @@ class ChatUI:
         listbox_frame.pack(fill=tk.X, padx=7.5, pady=5)
         listbox_frame.pack_propagate(False)  # Prevent frame from expanding
 
-        server_listbox = tk.Listbox(listbox_frame, height=10)
-        server_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        self.server_listbox = tk.Listbox(listbox_frame, height=10)
+        self.server_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Refresh the server list when opening the window
-        update_server_list()
+        self.update_server_list()
 
         # Button frame for layout control
         button_frame = tk.Frame(server_window)

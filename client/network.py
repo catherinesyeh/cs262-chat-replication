@@ -43,7 +43,9 @@ class ChatClient():
         self.last_offset_timestamp = None  # Store last account's timestamp for pagination
         self.username = None  # Username of the client
         self.bcrypt_prefix = None  # Bcrypt prefix for password hashing
+
         self.on_messages_updated = None  # Callback function to update messages
+        self.on_replicas_updated = None  # Callback function to update replicas
 
         self.bytes_sent = 0  # Number of bytes sent
         self.bytes_received = 0  # Number of bytes received
@@ -104,8 +106,6 @@ class ChatClient():
             response = self.stub.GetOtherAvailableReplicas(
                 chat_pb2.Empty())
             self.available_replicas = response.replicas
-            print(
-                f"[AVAILABLE REPLICAS] Available replicas: {self.available_replicas}")
             new_servers = [{'host': replica.hostname, 'port': replica.port}
                            for replica in self.available_replicas]
             # prepend current server to the list
@@ -113,9 +113,11 @@ class ChatClient():
             if new_servers != self.servers:
                 # Update the list of servers
                 self.servers = new_servers
-                print(f"[UPDATED REPLICAS]")
-            else:
-                print("[NO CHANGE TO REPLICAS]")
+                print(f"[UPDATED REPLICAS]: {self.servers}")
+
+                # Send a callback to update the replicas
+                if self.on_replicas_updated:
+                    self.on_replicas_updated()
         except Exception as e:
             self.log_error(f"[ERROR] Failed to update available replicas: {e}")
 
@@ -129,14 +131,35 @@ class ChatClient():
         :return: Response from the request function
         """
         with self.lock:
-            try:
-                if not self.stub:
-                    raise grpc.RpcError("No stub available")
-                return request_function(*args, **kwargs)
-            except grpc.RpcError as e:
-                self.log_error(f"[ERROR] RPC Error: {e}")
-                self.connect_to_server()
-                return None
+            attempts = 0
+            while attempts < self.max_retries:
+                try:
+                    if not self.stub:
+                        raise grpc.RpcError("No stub available")
+
+                    response = request_function(*args, **kwargs)
+                    return response  # Return response if successful
+
+                except grpc.RpcError as e:
+                    self.log_error(f"[ERROR] RPC Error: {e}")
+                    attempts += 1
+
+                    if attempts < self.max_retries:
+                        print(
+                            f"[FAILOVER] Attempting to reconnect... (Retry {attempts}/{self.max_retries})")
+                        self.connect_to_server()  # Attempt to reconnect to another server
+                    else:
+                        self.log_error(
+                            "[ERROR] Maximum retries reached. Request failed.")
+                        return None  # Return None if all attempts fail
+
+    def set_replica_update_callback(self, callback):
+        """
+        Set a callback function to update replicas.
+
+        :param callback: Callback function
+        """
+        self.on_replicas_updated = callback
 
     def set_message_update_callback(self, callback):
         """
@@ -160,12 +183,13 @@ class ChatClient():
 
     def poll_messages(self, poll_interval):
         """
-        Poll for messages from the server.
+        Poll for messages from the server and look for available replicas.
 
         :param poll_interval: Polling interval
         """
         while self.running:
             self.request_messages()
+            self.update_available_replicas()
 
             # Sleep for the polling interval
             time.sleep(poll_interval)
@@ -264,9 +288,12 @@ class ChatClient():
         response = self.request_with_failover(
             self.stub.ListAccounts, request)
 
-        # Return a list of (id, username, created_at) tuples
-        accounts = [(account.id, account.username, account.created_at)
-                    for account in response.accounts]
+        if not response.accounts:
+            accounts = []
+        else:
+            # Return a list of (id, username, created_at) tuples
+            accounts = [(account.id, account.username, account.created_at)
+                        for account in response.accounts]
         print(f"[LIST ACCOUNTS] Accounts: {accounts}")
         return accounts
 
@@ -303,8 +330,11 @@ class ChatClient():
         response = self.request_with_failover(
             self.stub.RequestMessages, request)
 
-        messages = [(message.id, message.sender,
-                     message.message) for message in response.messages]
+        if not response or response.messages:
+            messages = []
+        else:
+            messages = [(message.id, message.sender,
+                        message.message) for message in response.messages]
         if len(messages) > 0:
             print(f"[RECEIVED MESSAGES] Messages: {messages}")
             # send callback
