@@ -385,7 +385,11 @@ class ChatUI:
 
         if search_text != self.prev_search:
             self.prev_search = search_text
+            # Reset timestamp when starting new search
+            self.client.last_offset_timestamp = None
             self.all_users = []  # Clear existing users
+        else:  # If search text is the same, increment timestamp to timestamp of last user
+            self.client.last_offset_timestamp = self.all_users[-1][2] if self.all_users else None
 
         print(f"[DEBUG] Fetching users with search text: {search_text}")
         users = self.client.list_accounts(search_text)
@@ -427,7 +431,7 @@ class ChatUI:
         visible_users = self.all_users[self.current_user_page * self.client.max_users:(
             self.current_user_page + 1) * self.client.max_users]
 
-        for i, (_, username) in enumerate(visible_users):
+        for i, (_, username, _) in enumerate(visible_users):
             self.user_listbox.insert(
                 tk.END, username + (" (you)" if current_user == username else ""))
             if username == current_user:

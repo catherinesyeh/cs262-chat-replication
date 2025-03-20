@@ -39,7 +39,7 @@ class ChatClient():
         self.max_msg = max_msg  # Maximum number of messages to display
         self.max_users = max_users  # Maximum number of users to display
 
-        self.last_offset_account_id = 0  # Offset ID for pagination of accounts
+        self.last_offset_timestamp = None  # Store last account's timestamp for pagination
         self.username = None  # Username of the client
         self.bcrypt_prefix = None  # Bcrypt prefix for password hashing
         self.on_messages_updated = None  # Callback function to update messages
@@ -221,11 +221,18 @@ class ChatClient():
         if not self.session_key:
             return self.log_error("No session key available")
 
+        # If no timestamp set, start at 0
+        if self.last_offset_timestamp is None:
+            self.last_offset_timestamp = Timestamp()
+            self.last_offset_timestamp.seconds = 0
+
         request = chat_pb2.ListAccountsRequest(
-            session_key=self.session_key, maximum_number=self.max_users, offset_timestamp=self.generate_timestamp(), filter_text=filter_text)
+            session_key=self.session_key, maximum_number=self.max_users, offset_timestamp=self.last_offset_timestamp, filter_text=filter_text)
         response = self.request_with_failover(
             self.stub.ListAccounts, request)
-        accounts = [(account.id, account.username)
+
+        # Return a list of (id, username, created_at) tuples
+        accounts = [(account.id, account.username, account.created_at)
                     for account in response.accounts]
         print(f"[LIST ACCOUNTS] Accounts: {accounts}")
         return accounts
@@ -345,13 +352,3 @@ class ChatClient():
         hashed_password = bcrypt.hashpw(password.encode(), salt).decode()
         self.bcrypt_prefix = salt.decode()
         return hashed_password
-
-    def generate_timestamp(self):
-        """
-        Generate a timestamp.
-
-        :return: Timestamp
-        """
-        timestamp = Timestamp()
-        timestamp.GetCurrentTime()
-        return timestamp

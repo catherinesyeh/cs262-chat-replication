@@ -75,6 +75,11 @@ class ChatServiceStub(object):
             request_serializer=chat__pb2.DeleteAccountRequest.SerializeToString,
             response_deserializer=chat__pb2.Empty.FromString,
             _registered_method=True)
+        self.GetOtherAvailableReplicas = channel.unary_unary(
+            '/edu.harvard.ChatService/GetOtherAvailableReplicas',
+            request_serializer=chat__pb2.Empty.SerializeToString,
+            response_deserializer=chat__pb2.AvailableReplicas.FromString,
+            _registered_method=True)
 
 
 class ChatServiceServicer(object):
@@ -128,6 +133,12 @@ class ChatServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetOtherAvailableReplicas(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ChatServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -170,6 +181,11 @@ def add_ChatServiceServicer_to_server(servicer, server):
             servicer.DeleteAccount,
             request_deserializer=chat__pb2.DeleteAccountRequest.FromString,
             response_serializer=chat__pb2.Empty.SerializeToString,
+        ),
+        'GetOtherAvailableReplicas': grpc.unary_unary_rpc_method_handler(
+            servicer.GetOtherAvailableReplicas,
+            request_deserializer=chat__pb2.Empty.FromString,
+            response_serializer=chat__pb2.AvailableReplicas.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -390,6 +406,33 @@ class ChatService(object):
             '/edu.harvard.ChatService/DeleteAccount',
             chat__pb2.DeleteAccountRequest.SerializeToString,
             chat__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetOtherAvailableReplicas(request,
+                                  target,
+                                  options=(),
+                                  channel_credentials=None,
+                                  call_credentials=None,
+                                  insecure=False,
+                                  compression=None,
+                                  wait_for_ready=None,
+                                  timeout=None,
+                                  metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/edu.harvard.ChatService/GetOtherAvailableReplicas',
+            chat__pb2.Empty.SerializeToString,
+            chat__pb2.AvailableReplicas.FromString,
             options,
             channel_credentials,
             insecure,

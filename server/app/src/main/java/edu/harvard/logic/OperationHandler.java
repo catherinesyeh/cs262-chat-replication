@@ -146,7 +146,11 @@ public class OperationHandler {
     }
     List<Chat.Account> responseList = new ArrayList<>(list.size());
     for (Account a : list) {
-      responseList.add(Chat.Account.newBuilder().setId(a.id).setUsername(a.username).build());
+      responseList.add(Chat.Account.newBuilder()
+        .setId(a.id)
+        .setUsername(a.username)
+        .setCreatedAt(fromMillis(a.timestamp))
+        .build());
     }
     return ListAccountsResponse.newBuilder().addAllAccounts(responseList).build();
   }
