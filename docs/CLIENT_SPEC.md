@@ -13,8 +13,14 @@ All client-related files are in the [client/](../client/) folder.
 
 ## Connection handling
 
-The chat client establishes a gRPC connection to the server over HTTP/2, which persists for the session.
-The connection details are specified via a configuration file: e.g., [config_example.json](../config_example.json).
+The chat client establishes a gRPC connection to an available server over HTTP/2, which persists for the session.
+The connection details and available initial set of servers are specified via a configuration file: e.g., [config_example.json](../config_example.json).
+
+## Failover and replica discovery
+
+If a server goes down while the client is active, we perform failover and the client will automatically detect a new available server to connect to. All functions are called with a wrapper function to ensure that failover occurs smoothly.
+
+The client also detects new replicas automatically by contacting its current server. This ensure that the list of available servers is always up to date. Users can also manually refresh the list of servers from the UI.
 
 ## User interface
 
@@ -38,6 +44,7 @@ The client provides a simple graphical interface with these key views:
     - Log out of their account
 - **New message window:** opens when the user presses the "New Message" button. This is where the user can compose a message to someone else.
   - Valid recipients are all other existing users in the system, other than the user themselves (as specified in the [SERVER_SPEC](SERVER_SPEC.md), the user cannot send a message to themselves by design).
+- **Available servers list:** opens in a popup window when the user presses the "View Available Servers" button. This is where the user can view a list of the currently active servers and request manual refreshes. The list UI will automatically update when a change in available replicas is detected by the client.
 
 ## Error handling
 
