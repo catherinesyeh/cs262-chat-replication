@@ -288,7 +288,7 @@ class ChatClient():
         response = self.request_with_failover(
             self.stub.ListAccounts, request)
 
-        if not response.accounts:
+        if not response or not response.accounts:
             accounts = []
         else:
             # Return a list of (id, username, created_at) tuples
@@ -330,7 +330,7 @@ class ChatClient():
         response = self.request_with_failover(
             self.stub.RequestMessages, request)
 
-        if not response or response.messages:
+        if not response or not response.messages:
             messages = []
         else:
             messages = [(message.id, message.sender,

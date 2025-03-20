@@ -65,7 +65,7 @@ poetry run pytest
 ```
 
 - Integration tests: [client/tests/test_integration.py](client/tests/test_integration.py)
-  - Note: These tests do require the server and expect a clean database, so we suggest restarting the server before running them.
+  - Note: These tests do require the server and expect a clean database, so we suggest restarting the server and clearing old db files before running them.
   - The integration tests will also log metrics to the [client/tests/logs/](client/tests/logs/) directory.
 
 ## Documentation

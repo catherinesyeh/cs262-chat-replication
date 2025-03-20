@@ -35,13 +35,12 @@ def client_connection():
     Set up a ChatClient instance and connect to the server.
     """
     client_config = config.get_config("../../config.json")
-    host = client_config["host"]
-    port = client_config["port"]
+    servers = client_config["servers"]
     max_msg = client_config["max_msg"]
     max_users = client_config["max_users"]
 
     # Create a client based on the protocol
-    client = ChatClient(host, port, max_msg, max_users)
+    client = ChatClient(servers, max_msg, max_users)
 
     try:
         yield client
@@ -162,21 +161,22 @@ def test_list_accounts():
             listed_usernames) == sender.max_users, "List of accounts should be equal to max_users"
 
         # Send another request
-        sender.last_offset_account_id = sender.max_users
+        sender.last_offset_timestamp = list(accounts)[-1][2]
         accounts = sender.list_accounts()
         time.sleep(1)
 
         # Check if returned account ids are correct
-        ids = [account[0] for account in accounts]
+        timestamps = [account[2] for account in accounts]
         assert len(
             listed_usernames) == sender.max_users, "List of accounts should be equal to max_users"
 
-        for id in ids:
-            assert id > sender.last_offset_account_id, f"Account ID {id} should be greater than last_offset_account_id {sender.last_offset_account_id}"
+        for timestamp in timestamps:
+            assert (timestamp.seconds, timestamp.nanos) > (sender.last_offset_timestamp.seconds, sender.last_offset_timestamp.nanos), \
+                f"Account timestamp {timestamp} should be greater than last_offset_timestamp {sender.last_offset_timestamp}"
 
         # Now try filtering
         filter_text = "user1"
-        sender.last_offset_account_id = 0
+        sender.last_offset_timestamp = None
         accounts = sender.list_accounts(filter_text)
         time.sleep(1)
 
