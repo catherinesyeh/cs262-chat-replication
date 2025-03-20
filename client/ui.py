@@ -351,20 +351,50 @@ class ChatUI:
         """
         Display the available servers in a popup window.
         """
+        def refresh_servers():
+            """Fetches the latest list of available servers."""
+            threading.Thread(
+                target=self.client.update_available_replicas, daemon=True).start()
+            # Delay to allow the update to complete
+            self.root.after(100, update_server_list)
+
+        def update_server_list():
+            """Updates the displayed list of available servers."""
+            server_listbox.delete(0, tk.END)
+            for server in self.client.servers:
+                server_listbox.insert(
+                    tk.END, f"{server['host']}:{server['port']}")
+
         server_window = tk.Toplevel(self.root)
         server_window.title("Available Servers")
-        server_window.geometry("300x200")
+        server_window.geometry("350x220")
 
         tk.Label(server_window, text="Available Servers:").pack(pady=5)
 
-        server_listbox = tk.Listbox(server_window, height=10)
-        server_listbox.pack(fill=tk.BOTH, expand=True)
+        # Frame for the listbox to prevent it from resizing too much
+        listbox_frame = tk.Frame(server_window, height=120)  # Set fixed height
+        listbox_frame.pack(fill=tk.X, padx=7.5, pady=5)
+        listbox_frame.pack_propagate(False)  # Prevent frame from expanding
 
-        for server in self.client.servers:
-            server_listbox.insert(tk.END, f"{server['host']}:{server['port']}")
+        server_listbox = tk.Listbox(listbox_frame, height=10)
+        server_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        tk.Button(server_window, text="Close",
-                  command=server_window.destroy).pack(pady=10)
+        # Refresh the server list when opening the window
+        update_server_list()
+
+        # Button frame for layout control
+        button_frame = tk.Frame(server_window)
+        button_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        # Refresh Button
+        refresh_button = tk.Button(
+            button_frame, text="Refresh Servers", command=refresh_servers)
+        refresh_button.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=5)
+
+        # Close Button
+        close_button = tk.Button(button_frame, text="Close",
+                                 command=server_window.destroy)
+        close_button.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=5)
 
     ### LIST ACCOUNTS WORKFLOW ###
     def load_user_list(self, reset_pages=True):

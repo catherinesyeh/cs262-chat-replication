@@ -15,7 +15,7 @@ class ChatClient():
 
     ### GENERAL FUNCTIONS ###
 
-    def __init__(self, servers, max_msg, max_users, max_retries=5, retry_interval=2):
+    def __init__(self, servers, max_msg, max_users, max_retries=5, retry_interval=2, retry_delay=2):
         """
         Initialize the client.
 
@@ -31,6 +31,7 @@ class ChatClient():
 
         self.max_retries = max_retries  # Maximum number of retries for failover
         self.retry_interval = retry_interval  # Retry interval for failover
+        self.retry_delay = retry_delay  # Retry delay for failover
 
         self.session_key = None  # Session key for authenticated requests
         self.running = False  # Flag to control polling thread
@@ -71,8 +72,13 @@ class ChatClient():
                         base_channel, self.interceptor)
                     self.stub = chat_pb2_grpc.ChatServiceStub(
                         self.channel)  # Create a stub with the channel and interceptor
+
+                    # Perform lightweight request to check if the server is available
+                    self.stub.GetOtherAvailableReplicas(chat_pb2.Empty())
+
                     self.current_server = server
                     print(f"[CONNECTED] Connected to {channel_str}")
+                    self.update_available_replicas()
                     return
                 except Exception as e:
                     self.log_error(
@@ -87,6 +93,32 @@ class ChatClient():
 
         self.log_error("[ERROR] No servers available after maximum retries.")
 
+    def update_available_replicas(self):
+        """
+        Fetch the available replicas from the currently connected server.
+        """
+        if not self.stub:
+            return self.log_error("No stub available")
+
+        try:
+            response = self.stub.GetOtherAvailableReplicas(
+                chat_pb2.Empty())
+            self.available_replicas = response.replicas
+            print(
+                f"[AVAILABLE REPLICAS] Available replicas: {self.available_replicas}")
+            new_servers = [{'host': replica.hostname, 'port': replica.port}
+                           for replica in self.available_replicas]
+            # prepend current server to the list
+            new_servers.insert(0, self.current_server)
+            if new_servers != self.servers:
+                # Update the list of servers
+                self.servers = new_servers
+                print(f"[UPDATED REPLICAS]")
+            else:
+                print("[NO CHANGE TO REPLICAS]")
+        except Exception as e:
+            self.log_error(f"[ERROR] Failed to update available replicas: {e}")
+
     def request_with_failover(self, request_function, *args, **kwargs):
         """
         Wrapper function to handle requests with failover.
@@ -98,6 +130,8 @@ class ChatClient():
         """
         with self.lock:
             try:
+                if not self.stub:
+                    raise grpc.RpcError("No stub available")
                 return request_function(*args, **kwargs)
             except grpc.RpcError as e:
                 self.log_error(f"[ERROR] RPC Error: {e}")
@@ -156,7 +190,6 @@ class ChatClient():
         """
         request = chat_pb2.AccountLookupRequest(username=username)
         response = self.request_with_failover(self.stub.AccountLookup, request)
-        print(response)
         print(
             f"[LOOKUP] Exists: {response.exists}, Prefix: {response.bcrypt_prefix}")
         if response.exists:
@@ -269,6 +302,7 @@ class ChatClient():
             session_key=self.session_key, maximum_number=self.max_msg)
         response = self.request_with_failover(
             self.stub.RequestMessages, request)
+
         messages = [(message.id, message.sender,
                      message.message) for message in response.messages]
         if len(messages) > 0:
