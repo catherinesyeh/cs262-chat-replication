@@ -360,7 +360,7 @@ class ChatUI:
         Updates the displayed list of available servers.
         """
         try:
-            if hasattr(self, "server_listbox"):
+            if hasattr(self, "server_listbox") and self.server_listbox.winfo_exists():
                 self.server_listbox.delete(0, tk.END)
                 for server in self.client.servers:
                     self.server_listbox.insert(
