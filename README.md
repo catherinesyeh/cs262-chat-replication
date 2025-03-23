@@ -70,4 +70,4 @@ poetry run pytest
 
 ## Documentation
 
-More comprehensive internal documentation (including engineering notebooks with our efficiency analysis) is in the [docs/](docs/) folder.
+More comprehensive internal documentation (including engineering notebooks) is in the [docs/](docs/) folder.
