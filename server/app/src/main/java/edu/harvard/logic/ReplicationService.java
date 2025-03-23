@@ -98,6 +98,7 @@ public class ReplicationService {
           introduce(replica);
           stub.relay(message);
         }
+        channel.shutdown();
       } catch (Exception e) {
         // remove from live replicas on failure
         System.out.println("Exception while relaying to replica ".concat(replica.getId()).concat(" at ")
@@ -152,6 +153,7 @@ public class ReplicationService {
           introductionPoints.add(replica);
         }
       }
+      channel.shutdown();
     }
   }
 

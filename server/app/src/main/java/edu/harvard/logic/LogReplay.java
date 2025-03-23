@@ -106,6 +106,12 @@ public class LogReplay {
         account.client_bcrypt_prefix = message.getNewAccount().getBcryptPrefix();
         account.password_hash = message.getNewAccount().getPasswordHash();
         account.timestamp = toMillis(message.getNewAccount().getCreatedAt());
+        if (message.getOriginatingReplicaId().equals(replica_id)) {
+          Integer id = Integer.parseInt((account.id.split("-")[1]));
+          if (id <= next_account) {
+            next_account = id + 1;
+          }
+        }
         db.createAccount(account);
         break;
       case LogMessage.LogMessageCase.NEW_CHAT_MESSAGE:
@@ -116,6 +122,12 @@ public class LogReplay {
         m.read = message.getNewChatMessage().getRead();
         m.id = message.getNewChatMessage().getId();
         m.timestamp = toMillis(message.getNewChatMessage().getCreatedAt());
+        if (message.getOriginatingReplicaId().equals(replica_id)) {
+          Integer id = Integer.parseInt((m.id.split("-")[1]));
+          if (id <= next_message) {
+            next_message = id + 1;
+          }
+        }
         db.createMessage(m);
         break;
       case LogMessage.LogMessageCase.MARK_AS_READ:
