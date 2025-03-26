@@ -102,3 +102,7 @@ I finished a lot of the replication work yesterday. The remaining steps still to
 - Sending network state to clients (done!)
 
 Update - everything is completed! I'll need to run through some manual tests (likely with Catherine) and try out manually spinning up a few servers, particularly across a network, but the automated tests seem to indicate everything is working exactly as expected. Very good to see!
+
+## March 23, 2025
+
+I fixed a small but significant server bug (I had forgotten to implement the system for updating the "next ID" on replay - very important!) and did some additional testing, and everything seems to be working. At this point, I believe this is entirely done and working as anticipated!
